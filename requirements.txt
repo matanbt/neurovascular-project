@@ -29,3 +29,11 @@ rich            # beautiful text formatting in terminal
 pytest          # tests
 sh              # for running bash commands in some tests
 pudb            # debugger
+
+# ---- Our additions ----
+packaging  # unpack zarr
+wandb  # experiments monitoring
+sklearn
+scikit-learn
+matplotlib
+seaborn

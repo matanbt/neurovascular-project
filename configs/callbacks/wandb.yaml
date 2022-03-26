@@ -1,3 +1,4 @@
+# To run wandb monitoring + callbacks : `python train.py logger=many_loggers callbacks=wandb`
 defaults:
   - default.yaml
 

@@ -2,7 +2,7 @@ import os
 from typing import List, Optional
 
 import hydra
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 from pytorch_lightning import (
     Callback,
     LightningDataModule,
@@ -18,7 +18,7 @@ log = utils.get_logger(__name__)
 
 
 def train(config: DictConfig) -> Optional[float]:
-    """Contains the training pipeline. Can additionally evaluate model on a testset, using best
+    """Contains the training pipeline. Can additionally evaluate model on a test-set, using best
     weights achieved during training.
 
     Args:
@@ -42,6 +42,11 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning datamodule
     log.info(f"Instantiating datamodule <{config.datamodule._target_}>")
     datamodule: LightningDataModule = hydra.utils.instantiate(config.datamodule)
+
+    # Injecting essential dataset's (dynamic) metadata to the model config
+    with open_dict(config.model):
+        config.model["x_size"] = datamodule.x_size
+        config.model["y_size"] = datamodule.y_size
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")

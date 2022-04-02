@@ -3,10 +3,10 @@
 # specify here default training configuration
 defaults:
   - _self_
-  - datamodule: mnist.yaml
-  - model: mnist.yaml
+  - datamodule: neurovascu.yaml
+  - model: linear_regression.yaml  # for baseline: `model=linear_regression`
   - callbacks: default.yaml
-  - logger: csv.yaml # set logger here or use command line (e.g. `python train.py logger=many_loggers`)
+  - logger: csv.yaml # for experiments: `python train.py logger=many_loggers`
   - trainer: default.yaml
   - log_dir: default.yaml
 

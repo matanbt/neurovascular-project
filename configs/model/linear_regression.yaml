@@ -1,0 +1,8 @@
+_target_: src.models.linear_regression_module.LinearRegressionModule
+
+lr: 0.001
+weight_decay: 0.0005
+
+# These are (currently) added dynamically, based on the dataset metadata:
+# x_size: -
+# y_size: -

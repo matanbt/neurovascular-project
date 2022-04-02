@@ -1,0 +1,10 @@
+_target_: src.datamodules.neurovascu_datamodule.NVDataModule
+
+data_dir: ${data_dir} # data_dir is specified in config.yaml
+datasets_names:
+  - 2021_02_01_neurovascular_datasets
+  # - TODO ...Add more datasets
+batch_size: 64
+train_val_test_split: [2000, 500, 500]
+num_workers: 0
+pin_memory: False

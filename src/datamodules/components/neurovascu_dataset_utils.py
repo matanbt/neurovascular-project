@@ -10,8 +10,10 @@ class NVDatasetFetcher:
         class for fetching and preliminary pre-processing features from a neuro-vascular dataset
     """
     def __init__(self,
-                 dataset_path="data/2021_02_01_neurovascular_datasets"):
+                 data_dir="data/",
+                 dataset_name="2021_02_01_neurovascular_datasets"):
         # 1. Define paths to dataset's component
+        dataset_path = os.path.join(data_dir, dataset_name)
         neuro_path = os.path.join(dataset_path, "neuronal.zarr")
         vascu_path = os.path.join(dataset_path, "vascular.zarr")
         neuro_coordinates_path = os.path.join(dataset_path, "coordinates", "neuronal_coordinates.csv")
@@ -46,7 +48,7 @@ class NVDatasetFetcher:
         # TODO
 
     @staticmethod
-    def _get_coords(coord_df):
+    def _get_coords(coord_df: pd.DataFrame) -> np.ndarray:
         """
             returns a (np) matrix with scaled coordinates
         """
@@ -73,6 +75,7 @@ class NVDatasetFetcher:
 
 
 # -------- Feature Engineering Variations on the NV-dataset --------
+# `Dataset`s classes are where we should implement X,y variation of the task
 class NVDataset_Classic(Dataset):
     """
         Classic feature-engineering for the NV data, defines:
@@ -80,11 +83,12 @@ class NVDataset_Classic(Dataset):
         y - blood activity of time-stamp (of shape `vessels count`)
     """
     def __init__(self,
-                 dataset_path="data/2021_02_01_neurovascular_datasets",
+                 data_dir="data/",
+                 dataset_name="2021_02_01_neurovascular_datasets",
                  window_len=5,
                  include_feature_blood=True,
                  aggregate_window="flatten"):
-        self.fetcher = NVDatasetFetcher(dataset_path=dataset_path)
+        self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
 
         # back and forward window size
         self.window_len = window_len
@@ -98,7 +102,12 @@ class NVDataset_Classic(Dataset):
             f"Expected aggregate_window arg to be in {aggregate_window_methods}"
         self.aggregate_window = aggregate_window
 
-        # get metadata
+        # Calculate X,y sizes:
+        self.neuro_window_size = self.window_len * self.fetcher.metadata["neurons_count"] * 2
+        self.blood_window_size = self.window_len * self.fetcher.metadata["blood_vessels_count"] \
+                            * self.include_feature_blood
+        self.x_size = self.neuro_window_size + self.blood_window_size
+        self.y_size = self.fetcher.metadata["blood_vessels_count"]
 
     def __len__(self):
         return self.fetcher.metadata['timeseries_len'] - self.window_len * 2
@@ -110,14 +119,11 @@ class NVDataset_Classic(Dataset):
         assert 0 <= idx < len(self), f"Expected index in [0, {len(self) - 1}] but got {idx}"
         idx += self.window_len  # adds window offset for real time-stamp
 
-        neuro_window_size = self.window_len * self.fetcher.metadata["neurons_count"] * 2
-        blood_window_size = self.window_len * self.fetcher.metadata["blood_vessels_count"] \
-                            * self.include_feature_blood
-        x = np.zeros(neuro_window_size + blood_window_size)
-        y = np.zeros(self.fetcher.metadata["blood_vessels_count"])
+        x = np.zeros(self.x_size)
+        y = np.zeros(self.y_size)
 
-        x[:neuro_window_size] = self.fetcher.neuro_activity_array[:, (idx - self.window_len) : (idx + self.window_len)].flatten()
-        x[neuro_window_size:] = self.fetcher.vascu_activity_array[:, (idx - self.window_len) : idx].flatten()
+        x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, (idx - self.window_len) : (idx + self.window_len)].flatten()
+        x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:, (idx - self.window_len) : idx].flatten()
 
         y = self.fetcher.vascu_activity_array[:, idx]
 

@@ -2,6 +2,7 @@ import os.path
 import zarr
 import pandas as pd
 import numpy as np
+from numpy import ma
 from torch.utils.data import Dataset
 
 # -------- PreProcessing the raw dataset --------
@@ -33,10 +34,14 @@ class NVDatasetFetcher:
         self.vascu_coord_array = self._get_coords(vascu_coord_df)
         # TODO: consider adding more features from the dataset?
 
-        # 4. Validate dimensions
-        self.validate_dims()
+        # 4. Handle missing values
+        self.vascu_activity_array = self.fill_missing_values(self.vascu_activity_array)
 
-        # 5. Deduce metadata
+        # 5. Validate dimensions
+        self.validate_dims()
+        self.validate_no_nans()
+
+        # 6. Deduce metadata
         self.metadata = {
             "timeseries_len": self.time_vector_array.shape[0],
             "neurons_count": self.neuro_activity_array.shape[0],
@@ -61,6 +66,21 @@ class NVDatasetFetcher:
 
         return result
 
+    @staticmethod
+    def fill_missing_values(matrix_to_fix):
+        """
+            takes care of any `nan` in the given matrix, caused by missing data
+            [ We currently take care of it by averaging the entire time-series of
+              each vessels / neuron, but we can actually do it with a smaller window (TODO?) ]
+        """
+        # Summing each row as the fill-nan value
+        # Ref: https://stackoverflow.com/a/40209161/3476618
+        matrix_fixed = np.where(np.isnan(matrix_to_fix),
+                                ma.array(matrix_to_fix, mask=np.isnan(matrix_to_fix)).mean(axis=1)[:, np.newaxis],
+                                matrix_to_fix)
+        return matrix_fixed
+
+
     def validate_dims(self):
         """
             Sanity checks for the dimensions of the loaded data
@@ -73,6 +93,63 @@ class NVDatasetFetcher:
         assert (self.vascu_activity_array.shape[0] ==
                 self.vascu_activity_array.shape[0]), "Amount of blood-vessels must be in sync"
 
+    def validate_no_nans(self):
+        """
+            Validates the data excludes `nan`s (that were not taken care of)
+        """
+        # * Useful for debugging: np.argwhere(np.isnan(my_naned_array))
+        assert (not np.isnan(self.vascu_activity_array).any() and
+                not np.isnan(self.neuro_activity_array).any() and
+                not np.isnan(self.vascu_coord_array).any() and
+                not np.isnan(self.neuro_coord_array).any() and
+                not np.isnan(self.time_vector_array).any()
+                ), "Expected data to be clear of nan (= missing values)"
+
+    def get_neurons_df(self):
+        """ Get a dataframe based on neurons time-series"""
+        # Build dict to feed dataframe
+        data = {}
+        for i in range(len(self.neuro_activity_array)):
+            data[f"neuron_{i}"] = self.neuro_activity_array[i]
+
+        # Build dataframe
+        df = pd.DataFrame(data)
+        df.index = self.time_vector_array
+
+        return df
+
+    def get_vessels_df(self):
+        """ Get a dataframe based on blood-vessels time-series"""
+        # Build dict to feed dataframe
+        data = {}
+        for i in range(len(self.neuro_activity_array)):
+            data[f"vessel_{i}"] = self.neuro_activity_array[i]
+
+        # Build dataframe
+        df = pd.DataFrame(data)
+        df.index = self.time_vector_array
+
+        return df
+
+    def get_coords_df(self):
+        """ Get a dataframe based on (both) neurons and blood-vessels coordinates"""
+        data = []
+        indices = []
+        for i, coord in enumerate(self.neuro_coord_array):
+            indices.append(f"neuron_{i}")
+            data.append({
+                "x":coord[0], "y": coord[1], "z": coord[2],
+                "type": "Neuron"
+            })
+        for i, coord in enumerate(self.vascu_coord_array):
+            indices.append(f"vessel_{i}")
+            data.append({
+                "x":coord[0], "y": coord[1], "z": coord[2],
+                "type": "Blood-Vessel"
+            })
+
+        df = pd.DataFrame(data, index=indices)
+        return df
 
 # -------- Feature Engineering Variations on the NV-dataset --------
 # `Dataset`s classes are where we should implement X,y variation of the task

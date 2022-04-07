@@ -5,6 +5,11 @@ import numpy as np
 from numpy import ma
 from torch.utils.data import Dataset
 
+from src.utils import get_logger
+
+log = get_logger(__name__)
+
+
 # -------- PreProcessing the raw dataset --------
 class NVDatasetFetcher:
     """
@@ -75,6 +80,8 @@ class NVDatasetFetcher:
         """
         # Summing each row as the fill-nan value
         # Ref: https://stackoverflow.com/a/40209161/3476618
+        log.info("Filling missing values with all-time average "
+                 "of the element (neuron / vessels).")
         matrix_fixed = np.where(np.isnan(matrix_to_fix),
                                 ma.array(matrix_to_fix, mask=np.isnan(matrix_to_fix)).mean(axis=1)[:, np.newaxis],
                                 matrix_to_fix)
@@ -122,8 +129,8 @@ class NVDatasetFetcher:
         """ Get a dataframe based on blood-vessels time-series"""
         # Build dict to feed dataframe
         data = {}
-        for i in range(len(self.neuro_activity_array)):
-            data[f"vessel_{i}"] = self.neuro_activity_array[i]
+        for i in range(len(self.vascu_activity_array)):
+            data[f"vessel_{i}"] = self.vascu_activity_array[i]
 
         # Build dataframe
         df = pd.DataFrame(data)

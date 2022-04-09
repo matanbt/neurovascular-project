@@ -5,6 +5,11 @@ datasets_names:
   - 2021_02_01_neurovascular_datasets
   # - TODO ...Add more datasets
 batch_size: 64
-train_val_test_split: [2000, 500, 500]
+train_val_test_split: [2000, 500, 400]
 num_workers: 0
 pin_memory: False
+
+# Data Hyper-parameters
+window_len: 5
+include_feature_blood: True
+aggregate_window: "flatten"

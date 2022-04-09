@@ -3,9 +3,7 @@ from typing import Any, List
 import torch
 from pytorch_lightning import LightningModule
 from torchmetrics import MinMetric
-from torchmetrics import MeanSquaredError
-
-from src.models.components.simple_dense_net import SimpleDenseNet
+from torchmetrics import MeanSquaredError, MeanAbsoluteError
 
 
 class LinearRegressionModule(LightningModule):
@@ -23,7 +21,10 @@ class LinearRegressionModule(LightningModule):
         self.save_hyperparameters(logger=False)
 
         self.net = torch.nn.Linear(x_size, y_size)
-        # TODO fancy weight init
+        self.net.double()  # our data is passed in float64 (i.e. double)
+
+        # Weight initialization
+        torch.nn.init.xavier_uniform(self.net.weight)
 
         # loss function
         self.criterion = torch.nn.MSELoss()
@@ -35,10 +36,9 @@ class LinearRegressionModule(LightningModule):
         self.test_mse = MeanSquaredError()
 
         # for logging best so far validation accuracy
-        self.val_acc_best = MinMetric()
+        self.val_mse_best = MinMetric()
 
-    """Example of LightningModule for MNIST classification.
-
+    """
     A LightningModule organizes your PyTorch code into 5 sections:
         - Computations (init).
         - Train loop (training_step)
@@ -49,9 +49,10 @@ class LinearRegressionModule(LightningModule):
     Read the docs:
         https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html
     """
-# TODO debug from here to down
+
     def forward(self, x: torch.Tensor):
         return self.net(x)
+
 
     def step(self, batch: Any):
         x, y = batch
@@ -60,56 +61,64 @@ class LinearRegressionModule(LightningModule):
         preds = logits
         return loss, preds, y
 
+
     def training_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
 
         # log train metrics
-        acc = self.train_acc(preds, targets)
+        mse = self.train_mse(preds, targets)
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("train/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/mse", mse, on_step=False, on_epoch=True, prog_bar=True)
 
         # we can return here dict with any tensors
         # and then read it in some callback or in `training_epoch_end()`` below
         # remember to always return loss from `training_step()` or else backpropagation will fail!
         return {"loss": loss, "preds": preds, "targets": targets}
 
+
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
         pass
+
 
     def validation_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
 
         # log val metrics
-        acc = self.val_acc(preds, targets)
+        mse = self.val_mse(preds, targets)
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
-        self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/mse", mse, on_step=False, on_epoch=True, prog_bar=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
+
     def validation_epoch_end(self, outputs: List[Any]):
-        acc = self.val_acc.compute()  # get val accuracy from current epoch
-        self.val_acc_best.update(acc)
-        self.log("val/acc_best", self.val_acc_best.compute(), on_epoch=True, prog_bar=True)
+        mse = self.val_mse.compute()  # get val accuracy from current epoch
+        self.val_mse_best.update(mse)
+        self.log("val/mse_best", self.val_mse_best.compute(), on_epoch=True, prog_bar=True)
+
 
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
-        acc = self.test_acc(preds, targets)
+        acc = self.test_mse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/acc", acc, on_step=False, on_epoch=True)
+        self.log("test/mse", acc, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
+
 
     def test_epoch_end(self, outputs: List[Any]):
         pass
 
+
     def on_epoch_end(self):
         # reset metrics at the end of every epoch
-        self.train_acc.reset()
-        self.test_acc.reset()
-        self.val_acc.reset()
+        self.train_mse.reset()
+        self.test_mse.reset()
+        self.val_mse.reset()
+
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

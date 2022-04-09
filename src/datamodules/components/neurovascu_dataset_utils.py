@@ -195,21 +195,25 @@ class NVDataset_Classic(Dataset):
         self.x_size = self.neuro_window_size + self.blood_window_size
         self.y_size = self.fetcher.metadata["blood_vessels_count"]
 
+        self.time_vector = self.fetcher.time_vector_array[self.window_len : -self.window_len]
+
     def __len__(self):
         return self.fetcher.metadata['timeseries_len'] - self.window_len * 2
 
     def __getitem__(self, idx):
         """
-        Defines the X and y of each timestamp
+        Defines the X and y of each timestamp (=idx)
         """
         assert 0 <= idx < len(self), f"Expected index in [0, {len(self) - 1}] but got {idx}"
+
         idx += self.window_len  # adds window offset for real time-stamp
 
         x = np.zeros(self.x_size)
         y = np.zeros(self.y_size)
 
         x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, (idx - self.window_len) : (idx + self.window_len)].flatten()
-        x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:, (idx - self.window_len) : idx].flatten()
+        if self.include_feature_blood:
+            x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:, (idx - self.window_len) : idx].flatten()
 
         y = self.fetcher.vascu_activity_array[:, idx]
 

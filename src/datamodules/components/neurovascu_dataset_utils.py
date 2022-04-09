@@ -78,10 +78,12 @@ class NVDatasetFetcher:
             [ We currently take care of it by averaging the entire time-series of
               each vessels / neuron, but we can actually do it with a smaller window (TODO?) ]
         """
+        nan_count = np.argwhere(np.isnan(matrix_to_fix)).shape[0]
+        log.info(f"Filling {nan_count} missing values with all-time average "
+                  "of the element (neuron / vessels).")
+
         # Summing each row as the fill-nan value
         # Ref: https://stackoverflow.com/a/40209161/3476618
-        log.info("Filling missing values with all-time average "
-                 "of the element (neuron / vessels).")
         matrix_fixed = np.where(np.isnan(matrix_to_fix),
                                 ma.array(matrix_to_fix, mask=np.isnan(matrix_to_fix)).mean(axis=1)[:, np.newaxis],
                                 matrix_to_fix)

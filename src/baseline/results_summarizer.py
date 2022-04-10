@@ -55,6 +55,15 @@ class ResultsSummarizer:
     def plot_mse_per_vessel(self):
         pass
 
+    def sanity_checks_plot(self):
+        # plot MSE as function of diameter
+        # plot MSE as function of (vessl) angle
+        pass
+
+    def plot_probing(self):
+        # plots the probing of the model (for example the weights)
+        pass
+
     @staticmethod
     def get_true_and_pred_to_df(y_true, y_pred, time_vector=None):
         """ returns a dataframe based on blood-vessels time-series """

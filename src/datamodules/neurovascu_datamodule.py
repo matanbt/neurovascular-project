@@ -33,17 +33,21 @@ class NVDataModule(LightningDataModule):
         batch_size: int = 64,
         num_workers: int = 0,
         pin_memory: bool = False,
-        window_len=5,                 # data hyper-parameter
-        include_feature_blood=True,   # data hyper-parameter
-        aggregate_window="flatten"    # data hyper-parameter
+
+        # data hyper parameters:
+        window_len_neuro_back=5,
+        window_len_neuro_forward=5,
+        window_len_vascu_back=5,
+        aggregate_window="flatten"
 
     ):
         super().__init__()
 
         self.dataset = NVDataset_Classic(data_dir=data_dir,
                                          dataset_name=datasets_names[0],
-                                         window_len=window_len,
-                                         include_feature_blood=include_feature_blood,
+                                         window_len_neuro_back=window_len_neuro_back,
+                                         window_len_neuro_forward=window_len_neuro_forward,
+                                         window_len_vascu_back=window_len_vascu_back,
                                          aggregate_window=aggregate_window)
 
         # allows accessing init params with 'self.hparams' attribute

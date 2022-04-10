@@ -68,9 +68,9 @@ class NVLinearRegressionModel:
 
         return {
             'mse_train': mse_train,
-            'mae_train': mse_train,
+            'mae_train': mae_train,
             'r2_train': r2_train,
-            'mse_test': mae_test,
+            'mse_test': mse_test,
             'mae_test': mae_test,
             'r2_test': r2_test,
         }
@@ -133,12 +133,14 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
 
 def main():
     """ runs the regular pipeline of the model """
+    # create the dataset with its hparams
     dataset = NVDataset_Classic(
         window_len_neuro_back=5,
         window_len_neuro_forward=5,
         window_len_vascu_back=5
     )
 
+    # run and evaluate the model
     regr_model = NVLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)
     regr_model.fit()
     regr_model.evaluate()
@@ -146,6 +148,7 @@ def main():
     # Plot the actual vs predicted vascular activity
     summarizer = ResultsSummarizer(**regr_model.get_split_data())
     summarizer.plot_vascular_pred()
+
 
 if __name__ == '__main__':
     # main()

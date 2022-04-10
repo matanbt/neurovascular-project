@@ -20,16 +20,18 @@ seed: 42
 
 trainer:
   min_epochs: 5
-  max_epochs: 50
+  max_epochs: 500
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.002
+  lr: 0.0005
   weight_decay: 0.0005
 
 datamodule:
   batch_size: 64
-  window_len: 15
+  window_len_neuro_back: 6
+  window_len_neuro_forward: 4
+  window_len_vascu_back: 2
 
 logger:
   wandb:

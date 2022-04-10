@@ -10,6 +10,7 @@ num_workers: 0
 pin_memory: False
 
 # Data Hyper-parameters
-window_len: 5
-include_feature_blood: True
+window_len_neuro_back: 5
+window_len_neuro_forward: 3
+window_len_vascu_back: 2
 aggregate_window: "flatten"

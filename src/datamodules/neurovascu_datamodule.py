@@ -5,7 +5,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split, Subset
 from torchvision.transforms import transforms
 
-from src.datamodules.components.neurovascu_dataset_utils import NVDataset_Classic
+from src.datamodules.components.nv_datasets import NVDataset_Classic
 
 
 class NVDataModule(LightningDataModule):

@@ -1,19 +1,21 @@
+"""
+PreProcessing a raw neuro-vascular dataset
+"""
 import os.path
 import zarr
 import pandas as pd
 import numpy as np
 from numpy import ma
-from torch.utils.data import Dataset
 
 from src.utils import get_logger
 
 log = get_logger(__name__)
 
 
-# -------- PreProcessing the raw dataset --------
 class NVDatasetFetcher:
     """
-        class for fetching and preliminary pre-processing features from a neuro-vascular dataset
+        class for fetching (single) raw neuro-vascular-dataset,
+        and *preliminary* pre-processing the data, filling missing data, etc.
     """
     def __init__(self,
                  data_dir="data/",
@@ -37,7 +39,7 @@ class NVDatasetFetcher:
         self.vascu_activity_array = vascu_timeseries.get("time_varying_vascular_diameter").T  # matrix of [blood X timeunits]
         self.neuro_coord_array = self._get_coords(neuro_coord_df)
         self.vascu_coord_array = self._get_coords(vascu_coord_df)
-        # TODO: consider adding more features from the dataset?
+        # TODO: consider extracting more features from the dataset?
 
         # 4. Handle missing values
         self.vascu_activity_array = self.fill_missing_values(self.vascu_activity_array)
@@ -159,75 +161,3 @@ class NVDatasetFetcher:
 
         df = pd.DataFrame(data, index=indices)
         return df
-
-# -------- Feature Engineering Variations on the NV-dataset --------
-# `Dataset`s classes are where we should implement X,y variation of the task
-class NVDataset_Classic(Dataset):
-    """
-        Classic feature-engineering for the NV data, defines:
-        X - concat of: neurons back-window, neurons forward-window, blood back-window (by flag)
-        y - blood activity of time-stamp (of shape `vessels count`)
-    """
-    def __init__(self,
-                 data_dir="data/",
-                 dataset_name="2021_02_01_neurovascular_datasets",
-                 window_len=5,
-                 include_feature_blood=True,
-                 aggregate_window="flatten"):
-        self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
-
-        # back and forward window size
-        self.window_len = window_len
-
-        # Flags for feature engineering:
-        # whether to include blood-back-window in X
-        self.include_feature_blood = include_feature_blood
-        # method to aggregate the windows (we'll flatten and concat by default)
-        aggregate_window_methods = ['flatten']  # TODO add 'mean', 'sum', etc
-        assert aggregate_window in aggregate_window_methods, \
-            f"Expected aggregate_window arg to be in {aggregate_window_methods}"
-        self.aggregate_window = aggregate_window
-
-        # Calculate X,y sizes:
-        self.neuro_window_size = self.window_len * self.fetcher.metadata["neurons_count"] * 2
-        self.blood_window_size = self.window_len * self.fetcher.metadata["blood_vessels_count"] \
-                            * self.include_feature_blood
-        self.x_size = self.neuro_window_size + self.blood_window_size
-        self.y_size = self.fetcher.metadata["blood_vessels_count"]
-
-        self.time_vector = self.fetcher.time_vector_array[self.window_len : -self.window_len]
-
-    def __len__(self):
-        return self.fetcher.metadata['timeseries_len'] - self.window_len * 2
-
-    def __getitem__(self, idx):
-        """
-        Defines the X and y of each timestamp (=idx)
-        """
-        assert 0 <= idx < len(self), f"Expected index in [0, {len(self) - 1}] but got {idx}"
-
-        idx += self.window_len  # adds window offset for real time-stamp
-
-        x = np.zeros(self.x_size)
-        y = np.zeros(self.y_size)
-
-        x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, (idx - self.window_len) : (idx + self.window_len)].flatten()
-        if self.include_feature_blood:
-            x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:, (idx - self.window_len) : idx].flatten()
-
-        y = self.fetcher.vascu_activity_array[:, idx]
-
-        return x, y
-
-
-    def to_numpy(self):
-        """
-        Returns numpy matrix of our crafted dataset
-        (useful for sklearn models training)
-        """
-        x_all = np.zeros((len(self), len(self[0][0])))
-        y_all = np.zeros((len(self), len(self[0][1])))
-        for i in range(len(self)):
-            x, y = self[i]
-            x_all[i], y_all[i] = np.array(x), np.array(y)
-        return x_all, y_all

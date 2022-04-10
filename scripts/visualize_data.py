@@ -4,7 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.figure_factory as ff
 
-from src.datamodules.components.neurovascu_dataset_utils import NVDatasetFetcher
+from src.datamodules.components.nv_fetcher import NVDatasetFetcher
 
 
 def plot_neurons(

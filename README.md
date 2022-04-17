@@ -60,5 +60,10 @@ python train.py trainer.max_epochs=20 datamodule.batch_size=64
 
 Monitor training with **wandb**:
 ```bash
-python train.py logger=many_loggers callbacks=wandb
+python train.py logger=many_loggers
+```
+
+run the baseline model (does not trigger the deep-learning pipeline)
+```bash
+python src/baseline/baseline.py
 ```

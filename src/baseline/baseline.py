@@ -100,12 +100,14 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
     # Possible window lengths
     poss_window_lens = list(range(1, 22, 2))
     poss_window_lens_w_zero = [0] + poss_window_lens
+    poss_poly_degrees = [None]#, 2, 3]
     all_combinations = itertools.product(poss_window_lens,
                                          poss_window_lens_w_zero,
-                                         poss_window_lens_w_zero)
+                                         poss_window_lens_w_zero,
+                                         poss_poly_degrees)
 
     # Iterate on all possible window lengths and evaluate
-    for neuro_back, neuro_forward, vascu_back in all_combinations:
+    for neuro_back, neuro_forward, vascu_back, poly_degree in all_combinations:
         # create the dataset
         data_hparams = dict(
             window_len_neuro_back=neuro_back,
@@ -130,14 +132,18 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
         experiments_df.to_csv("./results/linear_regression_hparams_tuning.csv")
     return experiments_df
 
+# TODO XGBRegressot
+# TODO Multiple regression (one for each vessel)
 
 def main():
     """ runs the regular pipeline of the model """
     # create the dataset with its hparams
     dataset = NVDataset_Classic(
-        window_len_neuro_back=5,
-        window_len_neuro_forward=5,
-        window_len_vascu_back=5
+        window_len_neuro_back=9,
+        window_len_neuro_forward=1,
+        window_len_vascu_back=1,
+        poly_degree=None,
+        destroy_data=False
     )
 
     # run and evaluate the model
@@ -151,7 +157,7 @@ def main():
 
 
 if __name__ == '__main__':
-    # main()
-    df = tune_dataset_parameters()
+    main()
+    # df = tune_dataset_parameters()
 
 

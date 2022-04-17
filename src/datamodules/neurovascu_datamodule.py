@@ -38,6 +38,7 @@ class NVDataModule(LightningDataModule):
         window_len_neuro_back=5,
         window_len_neuro_forward=5,
         window_len_vascu_back=5,
+        poly_degree=None,
         aggregate_window="flatten"
 
     ):
@@ -48,6 +49,7 @@ class NVDataModule(LightningDataModule):
                                          window_len_neuro_back=window_len_neuro_back,
                                          window_len_neuro_forward=window_len_neuro_forward,
                                          window_len_vascu_back=window_len_vascu_back,
+                                         poly_degree=poly_degree,
                                          aggregate_window=aggregate_window)
 
         # allows accessing init params with 'self.hparams' attribute

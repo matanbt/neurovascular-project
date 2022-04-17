@@ -22,6 +22,7 @@ class LinearRegressionModule(LightningModule):
 
         self.net = torch.nn.Linear(x_size, y_size)
         self.net.double()  # our data is passed in float64 (i.e. double)
+        # TODO add dropout (with configurated `p`)
 
         # Weight initialization
         torch.nn.init.xavier_uniform(self.net.weight)

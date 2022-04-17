@@ -91,6 +91,20 @@ class NVDatasetFetcher:
                                 matrix_to_fix)
         return matrix_fixed
 
+    def destroy_data(self):
+        """
+            shuffles the raw data, making it stupid
+            * DON'T USE IT IF YOU WANT TO LEARN SOMETHING *
+            This dataset can be used as our 'control group', and be compared with the real dataset
+        """
+        # TODO - shuffle more gently with Lior's idea: ' Shift the temporal trace of each vessel segment and neuron by some random large number of frames'
+
+        # shuffles each array of raw data naively
+        for neuro in self.neuro_activity_array:
+            np.random.shuffle(neuro)
+        for vessel in self.vascu_activity_array:
+            np.random.shuffle(vessel)
+
 
     def validate_dims(self):
         """

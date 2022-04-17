@@ -29,9 +29,10 @@ model:
 
 datamodule:
   batch_size: 64
-  window_len_neuro_back: 6
-  window_len_neuro_forward: 4
+  window_len_neuro_back: 3
+  window_len_neuro_forward: 2
   window_len_vascu_back: 2
+  poly_degree: 2
 
 logger:
   wandb:

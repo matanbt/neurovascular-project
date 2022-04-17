@@ -4,8 +4,11 @@ Classes for feature engineering a raw neuro-vascular-dataset
     - All consume the raw dataset from the Fetcher class
     - Each class is different in the way it defines the X,y pairs
 """
+import math
+
 import numpy as np
 from torch.utils.data import Dataset
+from sklearn.preprocessing import PolynomialFeatures
 
 from src.datamodules.components.nv_fetcher import NVDatasetFetcher
 from src.utils import get_logger
@@ -26,10 +29,12 @@ class NVDataset_Classic(Dataset):
                  dataset_name="2021_02_01_neurovascular_datasets",
 
                  # Dataset hyper parameters:
-                 window_len_neuro_back=5,     # must be positive
-                 window_len_neuro_forward=5,  # `0` means no neuro-forward-window
-                 window_len_vascu_back=5,     # `0` means no vascular-window
-                 aggregate_window="flatten"
+                 window_len_neuro_back: int = 5,     # must be positive
+                 window_len_neuro_forward: int = 5,  # `0` means no neuro-forward-window
+                 window_len_vascu_back: int = 5,     # `0` means no vascular-window
+                 aggregate_window="flatten",
+                 poly_degree: int = None,     # `None` means no polynomial featuring
+                 destroy_data: bool = False   # shuffles the data to make it "bad"
                  ):
         self.dataset_name = dataset_name
         self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
@@ -40,8 +45,18 @@ class NVDataset_Classic(Dataset):
         self.window_len_vascu_back = window_len_vascu_back
         self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back)
 
+        # Polynomial featuring
+        self.poly_degree = poly_degree
+        self.poly_transform = None
+        if poly_degree is not None:
+            self.poly_transform = PolynomialFeatures(degree=poly_degree)
+
         # method to aggregate the windows (we'll flatten and concat by default)
         self.aggregate_window = aggregate_window
+
+        # destroy the data by shuffling it
+        if destroy_data:
+            self.fetcher.destroy_data()
 
         # Validate dataset parameters
         self.validate_params()
@@ -50,7 +65,13 @@ class NVDataset_Classic(Dataset):
         self.neuro_window_size = self.window_len_neuro_back * self.fetcher.metadata["neurons_count"]
         self.neuro_window_size += self.window_len_neuro_forward * self.fetcher.metadata["neurons_count"]
         self.vascu_window_size = self.window_len_vascu_back * self.fetcher.metadata["blood_vessels_count"]
-        self.x_size = self.neuro_window_size + self.vascu_window_size
+
+        # size-of-x-before any transformazion (such as polynomial features)
+        self.x_size_before = self.neuro_window_size + self.vascu_window_size
+        self.x_size = self.x_size_before  # by default be keep the 'before' size
+        if self.poly_transform:
+            self.x_size = math.comb((self.x_size_before +1) + 2 - 1 , 2)
+
         self.y_size = self.fetcher.metadata["blood_vessels_count"]
 
         # the effective time vector, truncating the window edges
@@ -67,7 +88,7 @@ class NVDataset_Classic(Dataset):
 
         idx += self.max_window_len  # adds window offset to get the actual time-stamp
 
-        x = np.zeros(self.x_size)
+        x = np.zeros(self.x_size_before)
         y = np.zeros(self.y_size)
 
         neuro_wind_start = idx - self.window_len_neuro_back
@@ -78,6 +99,11 @@ class NVDataset_Classic(Dataset):
             vascu_wind_start = idx - self.window_len_vascu_back
             vascu_wind_end = idx
             x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:,vascu_wind_start: vascu_wind_end].flatten()
+
+        if self.poly_transform is not None:
+            x = np.expand_dims(x, axis=0)  # reshaping is essential for fit_transform
+            x = self.poly_transform.fit_transform(x)
+            x = np.squeeze(x, axis=0)
 
         y = self.fetcher.vascu_activity_array[:, idx]
 
@@ -102,6 +128,7 @@ class NVDataset_Classic(Dataset):
             'window_len_neuro_back': self.window_len_neuro_back,
             'window_len_neuro_forward': self.window_len_neuro_forward,
             'window_len_vascu_back': self.window_len_vascu_back,
+            'poly_degree': self.poly_degree,
             'aggregate_window': self.aggregate_window
         }
 

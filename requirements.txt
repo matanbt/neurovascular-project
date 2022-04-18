@@ -31,7 +31,7 @@ sh              # for running bash commands in some tests
 pudb            # debugger
 
 # ---- Our additions ----
-packaging  # unpack zarr
+zarr  # unpacki zarr
 wandb  # experiments monitoring
 sklearn
 scikit-learn

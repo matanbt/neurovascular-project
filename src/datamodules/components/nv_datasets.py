@@ -66,7 +66,7 @@ class NVDataset_Classic(Dataset):
         self.neuro_window_size += self.window_len_neuro_forward * self.fetcher.metadata["neurons_count"]
         self.vascu_window_size = self.window_len_vascu_back * self.fetcher.metadata["blood_vessels_count"]
 
-        # size-of-x-before any transformazion (such as polynomial features)
+        # size-of-x-before any transformation (such as polynomial features)
         self.x_size_before = self.neuro_window_size + self.vascu_window_size
         self.x_size = self.x_size_before  # by default be keep the 'before' size
         if self.poly_transform:

@@ -18,7 +18,7 @@ What it does
 
 ## How to run
 
-Install dependencies
+#### Install dependencies
 
 ```bash
 # clone project
@@ -26,6 +26,7 @@ git clone https://github.com/YourGithubName/your-repo-name
 cd your-repo-name
 
 # [OPTIONAL] create conda environment
+# Using python3.8 is a must.
 conda create -n myenv python=3.8
 conda activate myenv
 
@@ -34,9 +35,12 @@ conda activate myenv
 
 # install requirements
 pip install -r requirements.txt
+
+# [OPTIONAL] if using WandB, insert your API key using: 
+wandb login
 ```
 
-Train model with default configuration
+#### Train model with default configuration
 
 ```bash
 # train on CPU
@@ -46,7 +50,7 @@ python train.py trainer.gpus=0
 python train.py trainer.gpus=1
 ```
 
-Train model with chosen experiment configuration from [configs/experiment/](configs/experiment/)
+#### Train model with chosen experiment configuration from [configs/experiment/](configs/experiment/)
 
 ```bash
 python train.py experiment=experiment_name.yaml
@@ -63,7 +67,7 @@ Monitor training with **wandb**:
 python train.py logger=many_loggers
 ```
 
-run the baseline model (does not trigger the deep-learning pipeline)
+#### Run the baseline model (does not trigger the deep-learning pipeline)
 ```bash
 python src/baseline/baseline.py
 ```

@@ -1,0 +1,2 @@
+# ignore Jupyter notebooks in Github's liguistic analysis
+notebooks/* linguist-vendored

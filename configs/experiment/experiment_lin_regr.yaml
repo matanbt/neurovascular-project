@@ -7,7 +7,7 @@ defaults:
   - override /datamodule: neurovascu.yaml
   - override /model: linear_regression.yaml
   - override /callbacks: default.yaml
-  - override /logger: many_loggers.yaml
+  - override /logger: comet.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -19,20 +19,21 @@ name: "linear_regression_v1"
 seed: 42
 
 trainer:
-  min_epochs: 5
+  min_epochs: 100
   max_epochs: 500
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.0005
-  weight_decay: 0.0005
+  lr: 0.00015
+  weight_decay: 0
+# Best parameters: {'datamodule.batch_size': 16, 'model.lr': 0.00013442014614022693, 'model.weight_decay': 0}
 
 datamodule:
-  batch_size: 64
-  window_len_neuro_back: 3
+  batch_size: 16
+  window_len_neuro_back: 4
   window_len_neuro_forward: 2
-  window_len_vascu_back: 2
-  poly_degree: 2
+  window_len_vascu_back: 1
+  poly_degree:
 
 logger:
   wandb:

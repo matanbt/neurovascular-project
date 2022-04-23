@@ -93,12 +93,12 @@ class NVDataset_Classic(Dataset):
 
         neuro_wind_start = idx - self.window_len_neuro_back
         neuro_wind_end = idx + self.window_len_neuro_forward
-        x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, neuro_wind_start : neuro_wind_end].flatten()
+        x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, neuro_wind_start: neuro_wind_end].flatten()
 
         if self.vascu_window_size > 0:
             vascu_wind_start = idx - self.window_len_vascu_back
             vascu_wind_end = idx
-            x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:,vascu_wind_start: vascu_wind_end].flatten()
+            x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:, vascu_wind_start: vascu_wind_end].flatten()
 
         if self.poly_transform is not None:
             x = np.expand_dims(x, axis=0)  # reshaping is essential for fit_transform

@@ -10,10 +10,10 @@ hydra-colorlog>=1.1.0
 hydra-optuna-sweeper>=1.1.0
 
 # --------- loggers --------- #
-# wandb
+wandb
 # neptune-client
 # mlflow
-# comet-ml
+comet-ml
 # tensorboard
 
 # --------- linters --------- #
@@ -32,8 +32,9 @@ pudb            # debugger
 
 # ---- Our additions ----
 zarr  # unpacki zarr
-wandb  # experiments monitoring
 sklearn
 scikit-learn
 matplotlib
 seaborn
+plotly
+xgboost

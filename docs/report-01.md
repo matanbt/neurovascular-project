@@ -19,6 +19,10 @@ Experimenting the baseline and some basic feature engineering techniques.
     - Explanation: This is not auto-regression, so the model strongly relies on the *golden* vascular activity.
     - Lesson: Avoid using 'forced learning' as we do here.
   - Combining the above two: 27.63MSE on val-set, 28.03 on train-set.
+- **Feature Engineering Conclusions**:
+  - @nadbag98
+- **Results Analysis**:
+  - @eyalban
 - **Neural Networks:**  
   - LinearRegression {LR: 3e-4, W-Decay: 1e-4, Window-sizes: (4,2,1)}: 7.489MSE on val-set, 5.357 on train-set.
   - Probing the weights (first 300 are neuronal windows, the last 426 is vascular window):

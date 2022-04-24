@@ -58,8 +58,8 @@ class NVDataset_Classic(Dataset):
         self.window_len_neuro_back = window_len_neuro_back
         self.window_len_neuro_forward = window_len_neuro_forward
         self.window_len_vascu_back = window_len_vascu_back
-        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back)
         self.window_len_y = window_len_y
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back, window_len_y)
 
         # Polynomial featuring
         self.poly_degree = poly_degree

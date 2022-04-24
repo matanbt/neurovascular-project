@@ -102,14 +102,15 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
     # Possible window lengths
     poss_window_lens = list(range(1, 22, 2))
     poss_window_lens_w_zero = [0] + poss_window_lens
-    poss_poly_degrees = [None]#, 2, 3]
+    poss_poly_degrees = [None]  # , 2, 3]
     all_combinations = itertools.product(poss_window_lens,
                                          poss_window_lens_w_zero,
                                          poss_window_lens_w_zero,
+                                         poss_y_lens,
                                          poss_poly_degrees)
 
     # Iterate on all possible window lengths and evaluate
-    for neuro_back, neuro_forward, vascu_back, poly_degree in all_combinations:
+    for neuro_back, neuro_forward, vascu_back, y_len, poly_degree in all_combinations:
         # create the dataset
         data_hparams = dict(
             window_len_neuro_back=neuro_back,

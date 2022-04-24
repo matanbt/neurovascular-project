@@ -72,15 +72,13 @@ class LinearRegressionModule(LightningModule):
         self.log("train/mse", mse, on_step=False, on_epoch=True, prog_bar=True)
 
         # we can return here dict with any tensors
-        # and then read it in some callback or in `training_epoch_end()`` below
+        # and then read it in some callback or in `training_epoch_end()` below
         # remember to always return loss from `training_step()` or else backpropagation will fail!
         return {"loss": loss, "preds": preds, "targets": targets}
-
 
     def training_epoch_end(self, outputs: List[Any]):
         # `outputs` is a list of dicts returned from `training_step()`
         pass
-
 
     def validation_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
@@ -92,12 +90,10 @@ class LinearRegressionModule(LightningModule):
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
-
     def validation_epoch_end(self, outputs: List[Any]):
         mse = self.val_mse.compute()  # get val accuracy from current epoch
         self.val_mse_best.update(mse)
         self.log("val/mse_best", self.val_mse_best.compute(), on_epoch=True, prog_bar=True)
-
 
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
@@ -109,7 +105,6 @@ class LinearRegressionModule(LightningModule):
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
-
     def test_epoch_end(self, outputs: List[Any]):
         pass
 
@@ -119,7 +114,6 @@ class LinearRegressionModule(LightningModule):
         self.train_mse.reset()
         self.test_mse.reset()
         self.val_mse.reset()
-
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

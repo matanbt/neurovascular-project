@@ -13,5 +13,7 @@ pin_memory: False
 window_len_neuro_back: 3
 window_len_neuro_forward: 2
 window_len_vascu_back: 2
-poly_degree: None
+window_len_y: 1
+poly_degree:
 aggregate_window: "flatten"
+scale_method:

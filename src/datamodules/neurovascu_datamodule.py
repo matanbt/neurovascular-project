@@ -38,6 +38,9 @@ class NVDataModule(LightningDataModule):
         window_len_neuro_back=5,
         window_len_neuro_forward=5,
         window_len_vascu_back=5,
+        window_len_y: int = 1,
+
+        scale_method: str = None,
         poly_degree=None,
         aggregate_window="flatten"
 
@@ -49,16 +52,13 @@ class NVDataModule(LightningDataModule):
                                          window_len_neuro_back=window_len_neuro_back,
                                          window_len_neuro_forward=window_len_neuro_forward,
                                          window_len_vascu_back=window_len_vascu_back,
+                                         window_len_y=window_len_y,
+                                         scale_method=scale_method,
                                          poly_degree=poly_degree,
                                          aggregate_window=aggregate_window)
 
         # allows accessing init params with 'self.hparams' attribute
         self.save_hyperparameters(logger=False)
-
-        # data transformations
-        # self.transforms = transforms.Compose(
-        #     []
-        # )
 
         self.data_train: Optional[Dataset] = None
         self.data_val: Optional[Dataset] = None

@@ -24,15 +24,16 @@ trainer:
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.00015
-  weight_decay: 0
-# Best parameters: {'datamodule.batch_size': 16, 'model.lr': 0.00013442014614022693, 'model.weight_decay': 0}
-
+  lr: 0.0003717
+  weight_decay: 0.000118
+  # Best parameters found: {'datamodule.batch_size': 64, 'model.lr': 0.0003717772181894882, 'model.weight_decay': 0.00011837413932389075}
 datamodule:
-  batch_size: 16
+  batch_size: 64
   window_len_neuro_back: 4
   window_len_neuro_forward: 2
-  window_len_vascu_back: 1
+  window_len_vascu_back: 0
+  window_len_y: 1
+  scale_method:
   poly_degree:
 
 logger:

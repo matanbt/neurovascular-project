@@ -25,17 +25,32 @@ class NVDataset_Classic(Dataset):
 
     def __init__(self,
                  # Dataset source:
-                 data_dir="data/",
-                 dataset_name="2021_02_01_neurovascular_datasets",
+                 data_dir: str = "data/",
+                 dataset_name: str = "2021_02_01_neurovascular_datasets",
 
                  # Dataset hyper parameters:
-                 window_len_neuro_back: int = 5,     # must be positive
-                 window_len_neuro_forward: int = 5,  # `0` means no neuro-forward-window
-                 window_len_vascu_back: int = 5,     # `0` means no vascular-window
+                 window_len_neuro_back: int = 5,
+                 window_len_neuro_forward: int = 5,
+                 window_len_vascu_back: int = 5,
+                 window_len_y: int = 1,
+                 scale_method: str = None,
                  aggregate_window="flatten",
-                 poly_degree: int = None,     # `None` means no polynomial featuring
-                 destroy_data: bool = False   # shuffles the data to make it "bad"
+                 poly_degree: int = None,
+                 destroy_data: bool = False
                  ):
+        """
+        Args:
+            data_dir: path for the dir we keep the data.
+            dataset_name: name of the raw dataset we build this instance upon.
+            window_len_neuro_back: length of the neuronal window of the 'past' ( must be positive).
+            window_len_neuro_forward: length of the neuronal window of the 'future' (`0` means no neuro-forward-window).
+            window_len_vascu_back: length of the vascular window of the 'past' (`0` means no vascular-window).
+            window_len_y: length of the vascular window to *predict* (regularly we assign `1`)
+            scale_method: default to `None` i.e. no scaling.  # TODO (? normalizing (with sliding window) the data)
+            aggregate_window: method to aggregate each window (by default we simply flatten the window)  # TODO (# TODO add 'mean', 'sum', etc)
+            poly_degree: adding polynomial features, defaults to `None` i.e. not adding these (WARNING: This yields high RAM consumption)
+            destroy_data: shuffles the data to make it "bad" (for control experiments)
+        """
         self.dataset_name = dataset_name
         self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
 
@@ -44,6 +59,7 @@ class NVDataset_Classic(Dataset):
         self.window_len_neuro_forward = window_len_neuro_forward
         self.window_len_vascu_back = window_len_vascu_back
         self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back)
+        self.window_len_y = window_len_y
 
         # Polynomial featuring
         self.poly_degree = poly_degree
@@ -70,9 +86,10 @@ class NVDataset_Classic(Dataset):
         self.x_size_before = self.neuro_window_size + self.vascu_window_size
         self.x_size = self.x_size_before  # by default be keep the 'before' size
         if self.poly_transform:
-            self.x_size = math.comb((self.x_size_before +1) + 2 - 1 , 2)
+            self.x_size = math.comb((self.x_size_before + 1) + 2 - 1, 2)
 
-        self.y_size = self.fetcher.metadata["blood_vessels_count"]
+        # calculate size of y
+        self.y_size = self.fetcher.metadata["blood_vessels_count"] * self.window_len_y
 
         # the effective time vector, truncating the window edges
         self.time_vector = self.fetcher.time_vector_array[self.max_window_len: -self.max_window_len]
@@ -91,6 +108,7 @@ class NVDataset_Classic(Dataset):
         x = np.zeros(self.x_size_before)
         y = np.zeros(self.y_size)
 
+        # Build X:
         neuro_wind_start = idx - self.window_len_neuro_back
         neuro_wind_end = idx + self.window_len_neuro_forward
         x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, neuro_wind_start: neuro_wind_end].flatten()
@@ -105,7 +123,8 @@ class NVDataset_Classic(Dataset):
             x = self.poly_transform.fit_transform(x)
             x = np.squeeze(x, axis=0)
 
-        y = self.fetcher.vascu_activity_array[:, idx]
+        # Build Y:
+        y = self.fetcher.vascu_activity_array[:, idx: idx + self.window_len_y].flatten()
 
         return x, y
 
@@ -116,10 +135,15 @@ class NVDataset_Classic(Dataset):
         assert self.window_len_neuro_back > 0, \
             "Expected positive back-window length for neuronal activity"
 
-        aggregate_window_methods = ['flatten']  # TODO add 'mean', 'sum', etc
+        aggregate_window_methods = ['flatten']  # + 'mean', 'sum'
         assert self.aggregate_window in aggregate_window_methods, \
             f"Expected aggregate_window arg ({self.aggregate_window}) to " \
             f"be in {aggregate_window_methods}"
+
+        scale_methods = [None, ]  # + 'normalize' 'normalize_sliding_window' ...
+        assert self.aggregate_window in aggregate_window_methods, \
+            f"Expected scale_method arg ({self.aggregate_window}) to " \
+            f"be in {scale_methods}"
 
     def get_data_hparams(self):
         """ returns the hyper parameters that defines this dataset instance """

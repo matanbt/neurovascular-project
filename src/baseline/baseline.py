@@ -2,10 +2,12 @@
 Linear Regression Baseline
 """
 import itertools
+from typing import List
 
 import numpy as np
 import pandas as pd
 
+from src.baseline.more_models import NVXGBLinearRegressionModel, PersistModel
 from src.baseline.results_summarizer import ResultsSummarizer
 from src.datamodules.components.nv_datasets import NVDataset_Classic
 
@@ -13,6 +15,7 @@ from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
 TEST_SIZE = 700
+
 
 class NVLinearRegressionModel:
     def __init__(self,
@@ -32,7 +35,6 @@ class NVLinearRegressionModel:
         self.y_train, self.y_test = y[:-test_size], y[-test_size:]
 
         self.test_size = test_size
-
 
     def fit(self):
         """ train the model on the training set, then predict """
@@ -132,22 +134,27 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
         experiments_df.to_csv("./results/linear_regression_hparams_tuning.csv")
     return experiments_df
 
-# TODO XGBRegressot
-# TODO Multiple regression (one for each vessel)
 
 def main():
     """ runs the regular pipeline of the model """
     # create the dataset with its hparams
     dataset = NVDataset_Classic(
-        window_len_neuro_back=9,
-        window_len_neuro_forward=1,
+        window_len_neuro_back=5,
+        window_len_neuro_forward=2,
         window_len_vascu_back=1,
+        window_len_y=1,
+        scale_method=None,
         poly_degree=None,
-        destroy_data=False
+        destroy_data=False  # control-group (shuffles the time-series)
     )
 
     # run and evaluate the model
-    regr_model = NVLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)
+    regr_model = NVLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # simple baseline
+
+    # More model (comment out to run these instead)
+    # regr_model = NVXGBLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # XGB-Regressor
+    # regr_model = PersistModel(dataset=dataset, test_size=TEST_SIZE)  # control group (naive predictor)
+
     regr_model.fit()
     regr_model.evaluate()
 

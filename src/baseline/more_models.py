@@ -1,0 +1,263 @@
+import itertools
+from typing import List
+
+import numpy as np
+from src.datamodules.components.nv_datasets import NVDataset_Classic
+
+from sklearn.linear_model import RidgeCV
+from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
+
+
+"""
+------------ Multiple Regressor ------------
+    The model is built of multiple regressor, each is a special regressor for a different blood-vessel
+"""
+class NVMultiLinearRegressionModel:
+    def __init__(self,
+                 dataset: NVDataset_Classic,
+                 test_size):
+        """ fitting a linear regression model to EACH blood vessel (sort of ensemble model) """
+
+        x, y = dataset.to_numpy()
+        self.x, self.y = x, y
+
+        # list of regressors (one for each blood vessel)
+        self.models: List[RidgeCV] = [None] * self.y.shape[1]
+
+        # split the dataset
+        self.x_train, self.x_test = x[:-test_size], x[-test_size:]
+        self.y_train, self.y_test = y[:-test_size], y[-test_size:]
+
+        self.y_pred = np.empty_like(self.y)
+        self.y_pred_test = np.empty_like(self.y_test)
+        self.y_pred_train = np.empty_like(self.y_train)
+
+        self.test_size = test_size
+
+    def fit(self):
+        """ train the model on the training set, then predict """
+        alphas = 10.0 ** np.arange(-10, 10, 1)  # possible regularization alphas
+        for i in range(self.y.shape[1]):
+            self.models[i] = RidgeCV(alphas=alphas)
+            self.models[i].fit(self.x_train, self.y_train[:, i])
+
+            self.y_pred[:, i] = self.models[i].predict(self.x)
+            self.y_pred_train[:, i] = self.models[i].predict(self.x_train)
+            self.y_pred_test[:, i] = self.models[i].predict(self.x_test)
+
+        return self
+
+    def get_model_hparams(self):
+        return {
+            'alpha': [model.alpha_ for model in self.models],
+            'test_size': self.test_size
+        }
+
+    def evaluate(self):
+        # evaluate
+        mse_train = mean_squared_error(self.y_train, self.y_pred_train)
+        mse_test = mean_squared_error(self.y_test, self.y_pred_test)
+        mae_train = mean_absolute_error(self.y_train, self.y_pred_train)
+        mae_test = mean_absolute_error(self.y_test, self.y_pred_test)
+        r2_train = r2_score(self.y_train, self.y_pred_train)
+        r2_test = r2_score(self.y_test, self.y_pred_test)
+
+        # print
+        print(f">> HParams: {self.get_model_hparams()}")
+        print(f">> Training: MSE={mse_train}, R^2={r2_train}, MAE={mae_train}")
+        print(f">> Testing: MSE={mse_test}, R^2={r2_test}, MAE={mae_test}")
+
+        return {
+            'mse_train': mse_train,
+            'mae_train': mae_train,
+            'r2_train': r2_train,
+            'mse_test': mse_test,
+            'mae_test': mae_test,
+            'r2_test': r2_test,
+        }
+
+    def get_split_data(self):
+        """ returns dict with splits used by model, and the model predictions """
+        return {
+            'x': self.x,
+            'x_train': self.x_train,
+            'x_test': self.x_test,
+            'y': self.y,
+            'y_train': self.y_train,
+            'y_test': self.y_test,
+            'y_pred_train': self.y_pred_train,
+            'y_pred_test': self.y_pred_test,
+            'y_pred': self.y_pred,
+        }
+
+
+"""
+------------ XGBoost Regressor ------------
+    Utilizing the random forest gradient-boost algorithm of XGBoost
+    # TODO [WORK IN PROGRESS]
+"""
+from xgboost import XGBRegressor, cv, DMatrix
+class NVXGBLinearRegressionModel:
+    def __init__(self,
+                 dataset: NVDataset_Classic,
+                 test_size):
+        """ classic linear regression model """
+        self.y_pred = None
+        self.y_pred_test = None
+        self.y_pred_train = None
+        self.model = None
+
+        x, y = dataset.to_numpy()
+        self.x, self.y = x, y
+
+        # split the dataset
+        self.x_train, self.x_test = x[:-test_size], x[-test_size:]
+        self.y_train, self.y_test = y[:-test_size], y[-test_size:]
+
+        self.test_size = test_size
+
+    def fit(self):
+        """ train the model on the training set, then predict """
+        # dmatrix = DMatrix(data=self.x_train, label=self.y_train)
+        # params = {'objective': 'reg:squarederror',
+        #           'max_depth': 6,
+        #           'colsample_bylevel': 0.5,
+        #           'learning_rate': 0.01,
+        #           'random_state': 20}
+        # cv_results = cv(dtrain=(self.x_train, self.y_train),
+        #                 params=params,
+        #                 nfold=10,
+        #                 metrics={'rmse'}, as_pandas=True, seed=20, num_boost_round=1000)
+        from sklearn.multioutput import MultiOutputRegressor
+        self.model = XGBRegressor(
+            objective='reg:squarederror',
+            max_depth=6,
+            learning_rate=0.01,
+            tree_method="hist",
+            n_estimators=1000,
+            eval_metric=mean_absolute_error,
+        )
+        self.model.fit(self.x_train, self.y_train,
+                       eval_set=[(self.x_train, self.y_train)])
+
+        self.y_pred = self.model.predict(self.x)
+        self.y_pred_train = self.model.predict(self.x_train)
+        self.y_pred_test = self.model.predict(self.x_test)
+
+        return self
+
+    def get_model_hparams(self):
+        return {
+            'test_size': self.test_size
+        }
+
+    def evaluate(self):
+        # evaluate
+        mse_train = mean_squared_error(self.y_train, self.y_pred_train)
+        mse_test = mean_squared_error(self.y_test, self.y_pred_test)
+        mae_train = mean_absolute_error(self.y_train, self.y_pred_train)
+        mae_test = mean_absolute_error(self.y_test, self.y_pred_test)
+        r2_train = r2_score(self.y_train, self.y_pred_train)
+        r2_test = r2_score(self.y_test, self.y_pred_test)
+
+        # print
+        print(f">> Training: MSE={mse_train}, R^2={r2_train}, MAE={mae_train}")
+        print(f">> Testing: MSE={mse_test}, R^2={r2_test}, MAE={mae_test}")
+
+        return {
+            'mse_train': mse_train,
+            'mae_train': mae_train,
+            'r2_train': r2_train,
+            'mse_test': mse_test,
+            'mae_test': mae_test,
+            'r2_test': r2_test,
+        }
+
+    def get_split_data(self):
+        """ returns dict with splits used by model, and the model predictions """
+        return {
+            'x': self.x,
+            'x_train': self.x_train,
+            'x_test': self.x_test,
+            'y': self.y,
+            'y_train': self.y_train,
+            'y_test': self.y_test,
+            'y_pred_train': self.y_pred_train,
+            'y_pred_test': self.y_pred_test,
+            'y_pred': self.y_pred,
+        }
+
+
+"""
+Persistence Model to be used as a control experiment
+(simply predict the previous vascular activity)
+"""
+# ------------ Stupid Models ------------
+class PersistModel:
+    """ """
+    def __init__(self,
+                 dataset: NVDataset_Classic,
+                 test_size):
+        """ classic linear regression model """
+        self.y_pred = None
+        self.y_pred_test = None
+        self.y_pred_train = None
+
+        x, y = dataset.to_numpy()
+        self.x, self.y = x, y
+
+        # split the dataset
+        self.x_train, self.x_test = x[:-test_size], x[-test_size:]
+        self.y_train, self.y_test = y[:-test_size], y[-test_size:]
+
+        self.test_size = test_size
+
+    def fit(self):
+        """ well... it does fit somehow"""
+        self.y_pred = self.x[:, -426:]  # we simply 'hijack' the previous blood-vessel activity
+        self.y_pred_train = self.x_train[:, -426:]
+        self.y_pred_test = self.x_test[:, -426:]
+
+        return self
+
+    def get_model_hparams(self):
+        return {
+            'stupid_fitting_method': 'taking the previously known vascular activity',
+            'test_size': self.test_size
+        }
+
+    def evaluate(self):
+        # evaluate
+        mse_train = mean_squared_error(self.y_train, self.y_pred_train)
+        mse_test = mean_squared_error(self.y_test, self.y_pred_test)
+        mae_train = mean_absolute_error(self.y_train, self.y_pred_train)
+        mae_test = mean_absolute_error(self.y_test, self.y_pred_test)
+        r2_train = r2_score(self.y_train, self.y_pred_train)
+        r2_test = r2_score(self.y_test, self.y_pred_test)
+
+        # print
+        print(f">> Training: MSE={mse_train}, R^2={r2_train}, MAE={mae_train}")
+        print(f">> Testing: MSE={mse_test}, R^2={r2_test}, MAE={mae_test}")
+
+        return {
+            'mse_train': mse_train,
+            'mae_train': mae_train,
+            'r2_train': r2_train,
+            'mse_test': mse_test,
+            'mae_test': mae_test,
+            'r2_test': r2_test,
+        }
+
+    def get_split_data(self):
+        """ returns dict with splits used by model, and the model predictions """
+        return {
+            'x': self.x,
+            'x_train': self.x_train,
+            'x_test': self.x_test,
+            'y': self.y,
+            'y_train': self.y_train,
+            'y_test': self.y_test,
+            'y_pred_train': self.y_pred_train,
+            'y_pred_test': self.y_pred_test,
+            'y_pred': self.y_pred,
+        }

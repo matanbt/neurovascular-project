@@ -38,3 +38,5 @@ matplotlib
 seaborn
 plotly
 xgboost
+pandas
+numpy

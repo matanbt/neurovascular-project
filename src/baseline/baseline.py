@@ -101,6 +101,7 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
 
     # Possible window lengths
     poss_window_lens = list(range(1, 22, 2))
+    poss_y_lens = list(range(1, 5, 1))
     poss_window_lens_w_zero = [0] + poss_window_lens
     poss_poly_degrees = [None]  # , 2, 3]
     all_combinations = itertools.product(poss_window_lens,
@@ -115,9 +116,12 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
         data_hparams = dict(
             window_len_neuro_back=neuro_back,
             window_len_neuro_forward=neuro_forward,
-            window_len_vascu_back=vascu_back
+            window_len_vascu_back=vascu_back,
+            window_len_y=y_len,
+            poly_degree=poly_degree,
         )
         dataset = NVDataset_Classic(**data_hparams)
+        print(f">>>> Tuning with {data_hparams}")
 
         # train and evaluate the model
         regr_model = NVLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)
@@ -131,8 +135,10 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
         experiments_table[-1].update(model_results)
 
     experiments_df = pd.DataFrame(experiments_table)
+
     if save_to_csv:
         experiments_df.to_csv("./results/linear_regression_hparams_tuning.csv")
+
     return experiments_df
 
 
@@ -165,7 +171,7 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
-    # df = tune_dataset_parameters()
+    # main()
+    df = tune_dataset_parameters()
 
 

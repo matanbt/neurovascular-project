@@ -25,7 +25,10 @@ This document will summarise our conclusion up to the first milestones, during w
     - Lesson: Avoid using 'forced learning' as we do here.
   - Combining the above two: 27.63MSE on val-set, 28.03 on train-set.
 - **Feature Engineering Conclusions**:
-  - @nadbag98
+  - When backward vascular window is set to 0 (i.e. model can't look backward on vascular data), test performance drops 
+  for every increase in neural windows.
+  - When model is allowed to look a single timestamp back in vascular activity, some weight is still given to neurons,
+  but seems less significant. When window is larger, apparently ignores neurons entirely. 
 - **Results Analysis**:
   - @eyalban
 - **Neural Networks Baseline:**  
@@ -38,6 +41,7 @@ This document will summarise our conclusion up to the first milestones, during w
   - **More work on L-Regression**:
     - on feature engineering (turning `y` to a future window we need to predict) and tuning window size.
     - Scale/ Normalize the dataset (neuronal and vascular activities are in different 'units').
+    - Find best window sizes for each blood vessel separately (calculate MSE per blood vessel, not overall)
   - **Neural Networks**:
     - Aggregating each window-type separately with different layer.
     - Simple and residual based model: add a neuronal-residual based on the blood.

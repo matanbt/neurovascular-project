@@ -19,10 +19,11 @@ This document will summarise our conclusion up to the first milestones, during w
   - Dropping neuro-forward-window: 7.54 MSE on val-set, 5.34 on train-set. 
   - Dropping neuro-backward-window: 7.58 MSE on val-set, 5.36 on train-set.
 - **Control Groups:** (tested on Baseline with tuned hparams)
-  - Randomizing the actual dataset (Lior's Suggestion): 13.94MSE on val-set, 14.08MSE on train-set.
+
   - Persistence Model - naively Predicting previous vascular activity: 6.132MSE on val-set, 7.38MSE on train-set
     - Explanation: This is not auto-regression, so the model strongly relies on the *golden* vascular activity.
     - Lesson: Avoid using 'forced learning' as we do here.
+  - Randomizing the actual dataset (Lior's Suggestion): 13.94MSE on val-set, 14.08MSE on train-set.
   - Combining the above two: 27.63MSE on val-set, 28.03 on train-set.
 - **Feature Engineering Conclusions**:
   - When backward vascular window is set to 0 (i.e. model can't look backward on vascular data), test performance drops 

@@ -19,8 +19,10 @@ This document will summarise our conclusion up to the first milestones, during w
   - Dropping neuro-forward-window: 7.54 MSE on val-set, 5.34 on train-set. 
   - Dropping neuro-backward-window: 7.58 MSE on val-set, 5.36 on train-set.
 - **Control Groups:** (tested on Baseline with tuned hparams)
-
   - Persistence Model - naively Predicting previous vascular activity: 6.132MSE on val-set, 7.38MSE on train-set
+    - Motivation:   - Probing the weights (first 300 are neuronal windows, the last 426 is vascular window):
+      <img width="450" src="img/vascu_overfit_weight_plot.png">
+      <img width="450" src="img/vascu_overfit_weight_heatmap.png">
     - Explanation: This is not auto-regression, so the model strongly relies on the *golden* vascular activity.
     - Lesson: Avoid using 'forced learning' as we do here.
   - Randomizing the actual dataset (Lior's Suggestion): 13.94MSE on val-set, 14.08MSE on train-set.
@@ -34,9 +36,6 @@ This document will summarise our conclusion up to the first milestones, during w
   - @eyalban
 - **Neural Networks Baseline:**  
   - LinearRegression {LR: 3e-4, W-Decay: 1e-4, Window-sizes: (4,2,1)}: 7.489MSE on val-set, 5.357 on train-set.
-  - Probing the weights (first 300 are neuronal windows, the last 426 is vascular window):
-    <img width="450" src="img/vascu_overfit_weight_plot.png">
-    <img width="450" src="img/vascu_overfit_weight_heatmap.png">
 ---------
 ## Leads:
   - **More work on L-Regression**:

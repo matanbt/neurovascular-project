@@ -42,6 +42,7 @@ This document will summarise our conclusion up to the first milestones, during w
     - on feature engineering (turning `y` to a future window we need to predict) and tuning window size.
     - Scale/ Normalize the dataset (neuronal and vascular activities are in different 'units').
     - Find best window sizes for each blood vessel separately (calculate MSE per blood vessel, not overall)
+    - Consider working on part of the blood vessels.
   - **Neural Networks**:
     - Aggregating each window-type separately with different layer.
     - Simple and residual based model: add a neuronal-residual based on the blood.

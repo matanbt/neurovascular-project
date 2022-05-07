@@ -168,10 +168,11 @@ def main():
     # Plot the actual vs predicted vascular activity
     summarizer = ResultsSummarizer(**regr_model.get_split_data())
     summarizer.plot_vascular_pred()
+    summarizer.plot_mse_per_vessel()
 
 
 if __name__ == '__main__':
-    # main()
-    df = tune_dataset_parameters()
+    main()
+    # df = tune_dataset_parameters()
 
 

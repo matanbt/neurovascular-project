@@ -1,7 +1,7 @@
 """
 Visualization of the predicted (vascular activity) data (compared to the actual data)
 """
-
+import numpy as np
 import pandas as pd
 import plotly.express as px
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -53,7 +53,24 @@ class ResultsSummarizer:
         fig.show()
 
     def plot_mse_per_vessel(self):
-        pass
+        """ Plots the (Normalized Root) MSE of each blood vessel, test-set"""
+        y, y_pred = self.y_test, self.y_pred_test
+        y, y_pred = y.T, y_pred.T
+        vessels_mse = np.zeros(y.shape[0])
+
+        for i in range(y.shape[0]):
+            vessels_mse[i] = np.sqrt(mean_squared_error(y[i], y_pred[i])) / np.mean(y[i])
+
+        fig = px.scatter(vessels_mse)
+        fig.update_layout(
+            title="Normalized RMSE for each blood vessel",
+            xaxis_title='#Blood-Vessel',
+            yaxis_title='NRMSE',
+        )
+        fig.show()
+
+        print("Average of NRMSE", vessels_mse.mean())
+        return vessels_mse
 
     def sanity_checks_plot(self):
         # plot MSE as function of diameter

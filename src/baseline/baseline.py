@@ -7,14 +7,14 @@ from typing import List
 import numpy as np
 import pandas as pd
 
-from src.baseline.more_models import NVXGBLinearRegressionModel, PersistModel
+from src.baseline.more_models import NVXGBLinearRegressionModel, PersistModel, MeanModel
 from src.baseline.results_summarizer import ResultsSummarizer
 from src.datamodules.components.nv_datasets import NVDataset_Classic
 
 from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 
-TEST_SIZE = 700
+TEST_SIZE = 800
 
 
 class NVLinearRegressionModel:
@@ -146,9 +146,9 @@ def main():
     """ runs the regular pipeline of the model """
     # create the dataset with its hparams
     dataset = NVDataset_Classic(
-        window_len_neuro_back=5,
-        window_len_neuro_forward=2,
-        window_len_vascu_back=1,
+        window_len_neuro_back=2,
+        window_len_neuro_forward=1,
+        window_len_vascu_back=0,
         window_len_y=1,
         scale_method=None,
         poly_degree=None,
@@ -160,7 +160,8 @@ def main():
 
     # More model (comment out to run these instead)
     # regr_model = NVXGBLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # XGB-Regressor
-    # regr_model = PersistModel(dataset=dataset, test_size=TEST_SIZE)  # control group (naive predictor)
+    #regr_model = PersistModel(dataset=dataset, test_size=TEST_SIZE)  # control group (naive predictor)
+    # regr_model = MeanModel(dataset=dataset, test_size=TEST_SIZE, mean_on_training_only=True)  # control group (naive predictor)
 
     regr_model.fit()
     regr_model.evaluate()

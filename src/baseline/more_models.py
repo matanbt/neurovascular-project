@@ -261,3 +261,86 @@ class PersistModel:
             'y_pred_test': self.y_pred_test,
             'y_pred': self.y_pred,
         }
+
+
+"""
+Another Control Model (to experiment):
+Return the mean activity of each blood-vessel, through all the time
+"""
+class MeanModel:
+    """ """
+    def __init__(self,
+                 dataset: NVDataset_Classic,
+                 test_size,
+                 mean_on_training_only=True):
+        """ classic linear regression model """
+        self.y_pred = None
+        self.y_pred_test = None
+        self.y_pred_train = None
+
+        self.vascu_activity_array = dataset.fetcher.vascu_activity_array
+
+        x, y = dataset.to_numpy()
+        self.x, self.y = x, y
+
+        # split the dataset
+        self.x_train, self.x_test = x[:-test_size], x[-test_size:]
+        self.y_train, self.y_test = y[:-test_size], y[-test_size:]
+
+        self.test_size = test_size
+
+        # means of the vascular activity:
+        training_vascu_mean = self.vascu_activity_array[:, :-test_size].mean(axis=1)
+        overall_vascu_mean = self.vascu_activity_array.mean(axis=1)
+
+        self.chosen_mean = training_vascu_mean if mean_on_training_only else overall_vascu_mean
+
+    def fit(self):
+        """ well... it does fit somehow"""
+        self.y_pred = np.tile(self.chosen_mean, (self.x.shape[0], 1))   # we simply 'hijack' the previous blood-vessel activity
+        self.y_pred_train = np.tile(self.chosen_mean, (self.x_train.shape[0], 1))
+        self.y_pred_test = np.tile(self.chosen_mean, (self.x_test.shape[0], 1))
+
+        return self
+
+    def get_model_hparams(self):
+        return {
+            'stupid_fitting_method': 'taking the previously known vascular activity',
+            'test_size': self.test_size
+        }
+
+    def evaluate(self):
+        # evaluate
+        mse_train = mean_squared_error(self.y_train, self.y_pred_train)
+        mse_test = mean_squared_error(self.y_test, self.y_pred_test)
+        mae_train = mean_absolute_error(self.y_train, self.y_pred_train)
+        mae_test = mean_absolute_error(self.y_test, self.y_pred_test)
+        r2_train = r2_score(self.y_train, self.y_pred_train)
+        r2_test = r2_score(self.y_test, self.y_pred_test)
+
+        # print
+        print(f">> Training: MSE={mse_train}, R^2={r2_train}, MAE={mae_train}")
+        print(f">> Testing: MSE={mse_test}, R^2={r2_test}, MAE={mae_test}")
+
+        return {
+            'mse_train': mse_train,
+            'mae_train': mae_train,
+            'r2_train': r2_train,
+            'mse_test': mse_test,
+            'mae_test': mae_test,
+            'r2_test': r2_test,
+        }
+
+    def get_split_data(self):
+        """ returns dict with splits used by model, and the model predictions """
+        return {
+            'x': self.x,
+            'x_train': self.x_train,
+            'x_test': self.x_test,
+            'y': self.y,
+            'y_train': self.y_train,
+            'y_test': self.y_test,
+            'y_pred_train': self.y_pred_train,
+            'y_pred_test': self.y_pred_test,
+            'y_pred': self.y_pred,
+        }

@@ -41,14 +41,19 @@ class NVDatasetFetcher:
         self.vascu_coord_array = self._get_coords(vascu_coord_df)
         # TODO: consider extracting more features from the dataset?
 
-        # 4. Handle missing values
+        # 4. Ad-hoc datasets fixes
+        if dataset_name == "2021_02_01_neurovascular_datasets":
+            # This last row appears twice, we shall remove the second appearance
+            self.vascu_activity_array = self.vascu_activity_array[:-1, :]
+
+        # 5. Handle missing values
         self.vascu_activity_array = self.fill_missing_values(self.vascu_activity_array)
 
-        # 5. Validate dimensions
+        # 6. Validate dimensions
         self.validate_dims()
         self.validate_no_nans()
 
-        # 6. Deduce metadata
+        # 7. Deduce metadata
         self.metadata = {
             "timeseries_len": self.time_vector_array.shape[0],
             "neurons_count": self.neuro_activity_array.shape[0],

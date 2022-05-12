@@ -1,0 +1,37 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=lin_regr.yaml [hparams_search=neurovascu_optuna]
+
+defaults:
+  - override /datamodule: neurovascu.yaml
+  - override /model: ehrf.yaml
+  - override /callbacks: default.yaml
+  - override /logger: comet.yaml
+  - override /trainer: default.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+name: "ehrf_tuning"
+
+seed: 42
+
+trainer:
+  min_epochs: 100
+  max_epochs: 500
+  gradient_clip_val: 0.5
+
+model:
+  lr: 0.0003717
+  weight_decay: 0.000118
+
+datamodule:
+  batch_size: 64
+  dataset_object:
+    _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
+    data_dir: ${data_dir}  # data_dir is specified in config.yaml
+    dataset_name: 2021_02_01_neurovascular_datasets
+    window_len_neuro_back: 5
+    window_len_neuro_forward: 2

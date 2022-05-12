@@ -1,0 +1,9 @@
+_target_: src.models.ehrf_module.EHRFModule
+
+lr: 0.001
+weight_decay: 0.0005
+latent_dim: 1
+
+# These are (currently) added dynamically, based on the dataset metadata:
+# x_size: -
+# y_size: -

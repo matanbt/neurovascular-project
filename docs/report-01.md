@@ -21,6 +21,7 @@ This document will summarise our conclusion up to the first milestones, during w
 - **Control Groups:** (tested on Baseline with tuned hparams)
   - Persistence Model - naively Predicting previous vascular activity: 6.132MSE on val-set, 7.38MSE on train-set
     - Motivation:   - Probing the weights (first 300 are neuronal windows, the last 426 is vascular window):
+
       <img width="450" src="img/vascu_overfit_weight_plot.png">
       <img width="450" src="img/vascu_overfit_weight_heatmap.png">
     - Explanation: This is not auto-regression, so the model strongly relies on the *golden* vascular activity.
@@ -31,7 +32,12 @@ This document will summarise our conclusion up to the first milestones, during w
   - When backward vascular window is set to 0 (i.e. model can't look backward on vascular data), test performance drops 
   for every increase in neural windows.
   - When model is allowed to look a single timestamp back in vascular activity, some weight is still given to neurons,
-  but seems less significant. When window is larger, apparently ignores neurons entirely. 
+  but seems less significant. When window is larger, apparently ignores neurons entirely.
+- **Polynomial Features Conclusions**:
+  - Ran with no vascular back window and front/back neural window values of [1, 2, 3, 5, 7].
+  - All HP settings lead to very bad overfitting - the lowest test MSE achieved was above 15, while train MSE was below 
+  2 and close to 0 for most cases.
+  - Best results were achieved for neuro_back, neuro_forward = (1, 1) and (2, 0).
 - **Results Analysis**:
   - @eyalban
 - **Neural Networks Baseline:**  

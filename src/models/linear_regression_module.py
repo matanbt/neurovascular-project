@@ -1,9 +1,9 @@
 from typing import Any, List
 
 import torch
+from torch.nn import Sequential, Linear, Dropout, MSELoss
 from pytorch_lightning import LightningModule
-from torchmetrics import MinMetric
-from torchmetrics import MeanSquaredError, MeanAbsoluteError
+from torchmetrics import MinMetric, MeanSquaredError, MeanAbsoluteError
 
 
 class LinearRegressionModule(LightningModule):
@@ -13,6 +13,7 @@ class LinearRegressionModule(LightningModule):
         y_size,
         lr: float = 0.001,
         weight_decay: float = 0.0005,
+        dropout: float = 0.0,
     ):
         super().__init__()
 
@@ -20,15 +21,23 @@ class LinearRegressionModule(LightningModule):
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
-        self.net = torch.nn.Linear(x_size, y_size)
+        # self.net = torch.nn.Linear(x_size, y_size)
+        self.net = Sequential(
+            Linear(x_size, y_size),
+            Dropout(p=dropout)
+        )
         self.net.double()  # our data is passed in float64 (i.e. double)
-        # TODO add dropout (with configurated `p`)
+
+        def init_weights(m):
+            if isinstance(m, Linear):
+                torch.nn.init.xavier_uniform_(m.weight)
 
         # Weight initialization
-        torch.nn.init.xavier_uniform(self.net.weight)
+        # torch.nn.init.xavier_uniform_(self.net.weight)
+        self.net.apply(init_weights)
 
         # loss function
-        self.criterion = torch.nn.MSELoss()
+        self.criterion = MSELoss()
 
         # use separate metric instance for train, val and test step
         # to ensure a proper reduction over the epoch

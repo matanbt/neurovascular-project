@@ -4,7 +4,9 @@
 defaults:
   - _self_
   - datamodule: neurovascu.yaml
-  - model: linear_regression.yaml  # for baseline: `model=linear_regression`
+  - model: linear_regression.yaml
+    # for baseline: `model=linear_regression`
+    # for EHRF: `model=ehrf`
   - callbacks: default.yaml
   - logger: csv.yaml # for experiments: `python train.py logger=many_loggers`
   - trainer: default.yaml

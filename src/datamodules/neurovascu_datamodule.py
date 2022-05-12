@@ -5,7 +5,7 @@ from pytorch_lightning import LightningDataModule
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split, Subset
 from torchvision.transforms import transforms
 
-from src.datamodules.components.nv_datasets import NVDataset_Classic
+from src.datamodules.components.nv_datasets import NVDataset_Classic, NVDataset_EHRF
 
 
 class NVDataModule(LightningDataModule):
@@ -33,29 +33,11 @@ class NVDataModule(LightningDataModule):
         batch_size: int = 64,
         num_workers: int = 0,
         pin_memory: bool = False,
-
-        # data hyper parameters:
-        window_len_neuro_back=5,
-        window_len_neuro_forward=5,
-        window_len_vascu_back=5,
-        window_len_y: int = 1,
-
-        scale_method: str = None,
-        poly_degree=None,
-        aggregate_window="flatten"
-
+        dataset_object: Dataset = None
     ):
         super().__init__()
 
-        self.dataset = NVDataset_Classic(data_dir=data_dir,
-                                         dataset_name=datasets_names[0],
-                                         window_len_neuro_back=window_len_neuro_back,
-                                         window_len_neuro_forward=window_len_neuro_forward,
-                                         window_len_vascu_back=window_len_vascu_back,
-                                         window_len_y=window_len_y,
-                                         scale_method=scale_method,
-                                         poly_degree=poly_degree,
-                                         aggregate_window=aggregate_window)
+        self.dataset = dataset_object
 
         # allows accessing init params with 'self.hparams' attribute
         self.save_hyperparameters(logger=False)
@@ -71,6 +53,11 @@ class NVDataModule(LightningDataModule):
     @property
     def y_size(self) -> int:
         return self.dataset.y_size
+
+    @property
+    def extras(self) -> dict:
+        """ Data to pass to the model *before* training"""
+        return self.dataset.get_extras()
 
     def prepare_data(self):
         """Download data if needed.

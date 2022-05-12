@@ -7,6 +7,7 @@ Classes for feature engineering a raw neuro-vascular-dataset
 import math
 
 import numpy as np
+import torch
 from torch.utils.data import Dataset
 from sklearn.preprocessing import PolynomialFeatures
 
@@ -145,6 +146,10 @@ class NVDataset_Classic(Dataset):
             f"Expected scale_method arg ({self.aggregate_window}) to " \
             f"be in {scale_methods}"
 
+    def get_extras(self):
+        """ Defines data to pass to the model BEFORE training """
+        return {}
+
     def get_data_hparams(self):
         """ returns the hyper parameters that defines this dataset instance """
         return {
@@ -167,3 +172,125 @@ class NVDataset_Classic(Dataset):
             x, y = self[i]
             x_all[i], y_all[i] = np.array(x), np.array(y)
         return x_all, y_all
+
+
+class NVDataset_EHRF(Dataset):
+    """
+        Feature-engineering for the EHRF with distances, defines:
+        X - neuronal activity window
+        y - blood activity of a time-stamp (of shape `vessels count`)
+    """
+
+    def __init__(self,
+                 # Dataset source:
+                 data_dir: str = "data/",
+                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+
+                 # Dataset hyper parameters:
+                 window_len_neuro_back: int = 5,
+                 window_len_neuro_forward: int = 2,
+
+                 destroy_data: bool = False
+                 ):
+        """
+        Args:
+            data_dir: path for the dir we keep the data.
+            dataset_name: name of the raw dataset we build this instance upon.
+            window_len_neuro_back: length of the neuronal window of the 'past' ( must be positive).
+            window_len_neuro_forward: length of the neuronal window of the 'future' (`0` means no neuro-forward-window).
+            destroy_data: shuffles the data to make it "bad" (for control experiments)
+        """
+        self.dataset_name = dataset_name
+        self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
+
+        # back and forward window size
+        self.window_len_neuro_back = window_len_neuro_back
+        self.window_len_neuro_forward = window_len_neuro_forward
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward)
+
+        # destroy the data by shuffling it
+        if destroy_data:
+            self.fetcher.destroy_data()
+
+        # Validate dataset parameters
+        self.validate_params()
+
+        # Calculate X,y sizes:
+        self.neuro_window_size = self.window_len_neuro_back * self.fetcher.metadata["neurons_count"]
+        self.neuro_window_size += self.window_len_neuro_forward * self.fetcher.metadata["neurons_count"]
+
+        # x_size is actually the neuron-window length
+        self.x_size = (self.fetcher.metadata["neurons_count"], self.neuro_window_size)
+
+        # calculate size of y
+        self.y_size = self.fetcher.metadata["blood_vessels_count"]
+
+        # the effective time vector, truncating the window edges
+        self.time_vector = self.fetcher.time_vector_array[self.max_window_len: -self.max_window_len]
+
+        self.distances = None
+        self.get_distances()
+
+    def __len__(self):
+        return self.fetcher.metadata['timeseries_len'] - self.max_window_len * 2
+
+    def __getitem__(self, idx):
+        """
+        Defines the X and y of each timestamp (=idx)
+        """
+        assert 0 <= idx < len(self), f"Expected index in [0, {len(self) - 1}] but got {idx}"
+
+        idx += self.max_window_len  # adds window offset to get the actual time-stamp
+
+        x = np.zeros(self.x_size)
+        y = np.zeros(self.y_size)
+
+        # Build X (neuronal activity entry):
+        neuro_wind_start = idx - self.window_len_neuro_back
+        neuro_wind_end = idx + self.window_len_neuro_forward
+        x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, neuro_wind_start: neuro_wind_end]
+
+        # Build Y:
+        y = self.fetcher.vascu_activity_array[:, idx]
+
+        return x, y
+
+    def validate_params(self):
+        """
+            Some basic invariants we want to hold, after the dataset parameters initialization
+        """
+        assert self.window_len_neuro_back > 0, \
+            "Expected positive back-window length for neuronal activity"
+
+    def get_data_hparams(self):
+        """ returns the hyper parameters that defines this dataset instance """
+        return {
+            'dataset_name': self.dataset_name,
+            'window_len_neuro_back': self.window_len_neuro_back,
+            'window_len_neuro_forward': self.window_len_neuro_forward,
+        }
+
+    def get_distances(self) -> torch.Tensor:
+        if self.distances is not None:
+            return self.distances
+
+        # define the distance metric that will use:
+        def calc_distance(p1, p2) -> int:
+            return np.linalg.norm(p1 - p2)
+
+        # each entry (i,j) is the distance between blood-vessel i to neuron j
+        vascu_coord_array = self.fetcher.vascu_coord_array
+        neuro_coord_array = self.fetcher.neuro_coord_array
+        self.distances = torch.zeros((vascu_coord_array.shape[0], neuro_coord_array.shape[0]))
+
+        for i in range(vascu_coord_array.shape[0]):
+            for j in range(neuro_coord_array.shape[0]):
+                self.distances[i, j] = calc_distance(vascu_coord_array[i], neuro_coord_array[j])
+
+        return self.distances
+
+    def get_extras(self):
+        """ Defines data to pass to the model BEFORE training """
+        return {
+            'distances': self.get_distances()
+        }

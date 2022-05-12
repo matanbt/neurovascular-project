@@ -40,3 +40,4 @@ plotly
 xgboost
 pandas
 numpy
+statsmodels

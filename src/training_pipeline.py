@@ -51,6 +51,9 @@ def train(config: DictConfig) -> Optional[float]:
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(config.model)
+    if getattr(model, "set_extras", None):
+        # In case model includes `set_extras` method, will set it with datamodule extras
+        model.set_extras(datamodule.extras)
 
     # Init lightning callbacks
     callbacks: List[Callback] = []

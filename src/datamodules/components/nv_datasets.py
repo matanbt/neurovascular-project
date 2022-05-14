@@ -117,7 +117,8 @@ class NVDataset_Classic(Dataset):
         if self.vascu_window_size > 0:
             vascu_wind_start = idx - self.window_len_vascu_back
             vascu_wind_end = idx
-            x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:, vascu_wind_start: vascu_wind_end].flatten()
+            x[self.neuro_window_size:] = self.fetcher.vascu_activity_array[:,
+                                         vascu_wind_start: vascu_wind_end].flatten()
 
         if self.poly_transform is not None:
             x = np.expand_dims(x, axis=0)  # reshaping is essential for fit_transform
@@ -189,7 +190,7 @@ class NVDataset_EHRF(Dataset):
                  # Dataset hyper parameters:
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 2,
-
+                 scaling_method: str = None,
                  destroy_data: bool = False
                  ):
         """
@@ -198,10 +199,14 @@ class NVDataset_EHRF(Dataset):
             dataset_name: name of the raw dataset we build this instance upon.
             window_len_neuro_back: length of the neuronal window of the 'past' ( must be positive).
             window_len_neuro_forward: length of the neuronal window of the 'future' (`0` means no neuro-forward-window).
+            scaling_method: How to scale the data (usually just the neurons), None means no scaling
             destroy_data: shuffles the data to make it "bad" (for control experiments)
         """
         self.dataset_name = dataset_name
         self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
+        self.neuro_activity_array = self.fetcher.neuro_activity_array
+        self.vascu_activity_array = self.fetcher.vascu_activity_array
+        self.scaling_method = scaling_method
 
         # back and forward window size
         self.window_len_neuro_back = window_len_neuro_back
@@ -215,12 +220,15 @@ class NVDataset_EHRF(Dataset):
         # Validate dataset parameters
         self.validate_params()
 
+        # Scale the data
+        self._scale_data()
+
         # Calculate X,y sizes:
-        self.neuro_window_size = self.window_len_neuro_back * self.fetcher.metadata["neurons_count"]
-        self.neuro_window_size += self.window_len_neuro_forward * self.fetcher.metadata["neurons_count"]
+        self.single_neuro_window_size = self.window_len_neuro_back + self.window_len_neuro_forward
+        self.neuro_window_size = self.single_neuro_window_size * self.fetcher.metadata["neurons_count"]
 
         # x_size is actually the neuron-window length
-        self.x_size = (self.fetcher.metadata["neurons_count"], self.neuro_window_size)
+        self.x_size = (self.fetcher.metadata["neurons_count"], self.single_neuro_window_size)
 
         # calculate size of y
         self.y_size = self.fetcher.metadata["blood_vessels_count"]
@@ -229,7 +237,7 @@ class NVDataset_EHRF(Dataset):
         self.time_vector = self.fetcher.time_vector_array[self.max_window_len: -self.max_window_len]
 
         self.distances = None
-        self.get_distances()
+        self._get_distances()
 
     def __len__(self):
         return self.fetcher.metadata['timeseries_len'] - self.max_window_len * 2
@@ -248,10 +256,10 @@ class NVDataset_EHRF(Dataset):
         # Build X (neuronal activity entry):
         neuro_wind_start = idx - self.window_len_neuro_back
         neuro_wind_end = idx + self.window_len_neuro_forward
-        x[:self.neuro_window_size] = self.fetcher.neuro_activity_array[:, neuro_wind_start: neuro_wind_end]
+        x = self.neuro_activity_array[:, neuro_wind_start: neuro_wind_end]
 
         # Build Y:
-        y = self.fetcher.vascu_activity_array[:, idx]
+        y = self.vascu_activity_array[:, idx]
 
         return x, y
 
@@ -261,6 +269,7 @@ class NVDataset_EHRF(Dataset):
         """
         assert self.window_len_neuro_back > 0, \
             "Expected positive back-window length for neuronal activity"
+        assert self.scaling_method in [None, "neuro_mean_removal"]
 
     def get_data_hparams(self):
         """ returns the hyper parameters that defines this dataset instance """
@@ -270,7 +279,7 @@ class NVDataset_EHRF(Dataset):
             'window_len_neuro_forward': self.window_len_neuro_forward,
         }
 
-    def get_distances(self) -> torch.Tensor:
+    def _get_distances(self) -> torch.Tensor:
         if self.distances is not None:
             return self.distances
 
@@ -289,8 +298,22 @@ class NVDataset_EHRF(Dataset):
 
         return self.distances
 
+    def _get_mean_vascular_activity(self):
+        """ returns the mean vascular activity of the first half of the data """
+        end_calc_idx = len(self.time_vector) // 2
+        return self.vascu_activity_array[:end_calc_idx].mean(axis=1)
+
     def get_extras(self):
         """ Defines data to pass to the model BEFORE training """
         return {
-            'distances': self.get_distances()
+            'distances': self._get_distances(),
+            'mean_vascular_activity': self._get_mean_vascular_activity()
         }
+
+    def _scale_data(self):
+        """ """
+        if self.scaling_method is None:
+            return
+        if self.scaling_method == 'neuro_mean_removal':
+            self.neuro_activity_array -= np.expand_dims(self.neuro_activity_array.mean(axis=1), axis=1)
+

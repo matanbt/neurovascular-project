@@ -26,6 +26,10 @@ trainer:
 model:
   lr: 0.0003717
   weight_decay: 0.000118
+  hidden_layers: 2
+  hidden_layer_dim: 100
+  with_vascular_mean: False
+  hidden_dropout: 0.2
 
 datamodule:
   batch_size: 64

@@ -17,7 +17,7 @@ Exploring the neuro-vascular interface, with the goal of finding the HRF functio
 
 ## How to run
 
-#### Install dependencies
+### Install dependencies
 
 ```bash
 # clone project
@@ -39,34 +39,24 @@ pip install -r requirements.txt
 wandb login
 ```
 
-#### Train model with default configuration
-
-```bash
-# train on CPU
-python train.py trainer.gpus=0
-
-# train on GPU
-python train.py trainer.gpus=1
-```
-
-#### Train model with chosen experiment configuration from [configs/experiment/](configs/experiment/)
+### Train model with chosen experiment configuration from [configs/experiment/](configs/experiment/)
 
 ```bash
 python train.py experiment=experiment_name.yaml
 ```
 
-You can override any parameter from command line like this
+**Main Experiments List:**
+- `experiment_lin_regr_vascu.yaml`: Naive Linear Regression baseline, but including the vascular activity.
+- `experiment_lin_regr.yaml`: Linear Regression baseline, from neuronal activity only.
+- `experiment_ehrf.yaml`: A carefully engineered learnable function from neuronal activity.
 
-```bash
-python train.py trainer.max_epochs=20 datamodule.batch_size=64
-```
+### Override configurations
+You can override any parameter from command line like this. Some useful examples:
+- `trainer.gpus=1`: train with single GPU (`0` for CPU).
+- `logger=csv`: change the logger to be a simple _CSV_ file.
+- `trainer.max_epochs=20`: Change the max epochs amount to 20.
 
-Monitor training with **comet.ml**:
-```bash
-python train.py logger=many_loggers
-```
-
-#### Run the baseline model (does not trigger the deep-learning pipeline)
+### Run the baseline model (non-Deep model)
 ```bash
 python src/baseline/baseline.py
 ```

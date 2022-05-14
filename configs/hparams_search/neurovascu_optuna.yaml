@@ -42,25 +42,31 @@ hydra:
 
     # define range of hyper parameters
     search_space:
-      datamodule.batch_size:
-        type: categorical
-        choices: [16, 32, 64]
-      datamodule.window_len_neuro_back:
-        type: categorical
-        choices: [2, 5, 10, 15]
-      datamodule.window_len_neuro_forward:
-        type: categorical
-        choices: [0, 2, 5, 10, 15 ]
+#      datamodule.batch_size:
+#        type: categorical
+#        choices: [16, 32, 64]
+#      datamodule.window_len_neuro_back:
+#        type: categorical
+#        choices: [2, 5, 10, 15]
+#      datamodule.window_len_neuro_forward:
+#        type: categorical
+#        choices: [0, 2, 5, 10, 15]
       model.lr:
         type: float
         low: 0.00001
-        high: 0.01
+        high: 0.001
       model.weight_decay:
         type: float
         low: 0
         high: 0.01
-      model.dropout:
-        type: float
-        low: 0
-        high: 0.7
+#      model.hidden_layers:
+#        type: categorical
+#        choices: [0, 1, 2, 3, 5]
+#      model.hidden_layer_dim:
+#        type: categorical
+#        choices: [50, 100, 150, 200]
+#      model.dropout:
+#        type: float
+#        low: 0
+#        high: 0.7
 

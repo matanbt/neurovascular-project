@@ -57,17 +57,15 @@ class EHRFModule(LightningModule):
         self.to_latent_space.double()  # our data is passed in float64 (i.e. double)
         self.to_latent_space.apply(self.init_weights)
 
-        """
         # Build the latent space to vascular activity transformation
         self.to_vascular = nn.Sequential(
             nn.ReLU(),
-            nn.Linear(self.neuron_count * self.latent_dim, self.y_size),
+            nn.Linear(self.neuron_count * (self.latent_dim - 1), self.y_size),
             nn.ReLU(),
             nn.Linear(self.y_size, self.y_size),
         )
         self.to_vascular.double()  # our data is passed in float64 (i.e. double)
         self.to_vascular.apply(self.init_weights)
-        """
 
         # ConvNN structure
         """
@@ -141,40 +139,19 @@ class EHRFModule(LightningModule):
         flattened_x = torch.flatten(batch_x, start_dim=1)
         latent_space = self.to_latent_space(flattened_x)
 
-        # From latent to vascular activity (Human Engineered)
+        # From latent to vascular activity
         latent_space = latent_space.view(batch_x.shape[0], batch_x.shape[1], self.latent_dim)
+        if self.latent_dim > 1:
+            # 1. Predict based on the last latent dims
+            vascu_pred = self.to_vascular(latent_space[:, :, 1:].flatten(start_dim=1))
+        # 2. Predict based on the first latent dim, with special function
         for i in range(batch_x.shape[0]):
             if self.with_vascular_mean:
-                vascu_pred[i] += self.mean_vascular_activity  # adding vascular activity mean
+                # adding vascular activity mean as a bias
+                vascu_pred[i] += self.mean_vascular_activity
             #  each neuron is weighted by distance from blood vessel
-            vascu_pred[i] += (self.distances * latent_space[i, :, 0]).sum(dim=1)
-            # TODO in case self.latent_dim > 1 we need the aggregate the other dims.
-        """
-        # From latent to vascular activity (Deep)
-        vascu_pred = self.to_vascular(latent_space)
-        """
+            vascu_pred[i] += ((1 / self.distances) * latent_space[i, :, 0]).sum(dim=1)
         # -------- END OPTION 1 --------
-
-        # -------- OPTION 2:  --------
-        """
-        latent_spaces = []
-        for i, x in enumerate(batch_x):
-            # For each example, we build the latent space
-            latent_space = None
-            for neuron in range(self.neuron_count):
-                if latent_space is None:
-                    latent_space = self.neuro_weights[neuron](x[neuron]).unsqueeze(dim=0)
-                else:
-                    latent_space = torch.vstack((latent_space, self.neuro_weights[neuron](x[neuron])))
-
-            # we manipulate the latent space, to build the result
-            if vascu_pred is None:
-                vascu_pred = curr_pred
-            else:
-                vascu_pred = torch.vstack((vascu_pred, curr_pred))
-            # latent_spaces.append(latent_space)
-        """
-        # -------- OPTION 2:  --------
 
         # -------- OPTION 3: Linear layer to Latent-Space --------
         """

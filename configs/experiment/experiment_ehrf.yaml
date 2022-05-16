@@ -14,22 +14,23 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "ehrf_tuning"
+name: "ehrf_tuning_v1"
 
 seed: 42
 
 trainer:
   min_epochs: 100
-  max_epochs: 500
+  max_epochs: 700
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.0003717
+  lr: 0.0018585  # slower: 0.0003717
   weight_decay: 0.000118
-  hidden_layers: 2
+  latent_dim: 1
+  hidden_layers: 0
   hidden_layer_dim: 100
   with_vascular_mean: False
-  hidden_dropout: 0.2
+  hidden_dropout: 0
 
 datamodule:
   batch_size: 64

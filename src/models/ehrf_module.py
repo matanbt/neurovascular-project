@@ -21,6 +21,7 @@ class EHRFModule(LightningModule):
         hidden_layer_dim: int = 100,       # Dims of ^
         hidden_dropout: float = 0,         # Dropout layer to the latent transform
         with_vascular_mean: bool = False,  # Whether to insert vascular mean before prediction (should help)
+        with_1st_latent_dim: bool = True,
 
         lr: float = 0.001,
         weight_decay: float = 0.0005,
@@ -38,6 +39,7 @@ class EHRFModule(LightningModule):
         self.neuron_count, self.neuro_window_size, self.vessels_count = x_size[0], x_size[1], y_size
         self.latent_dim = latent_dim
         self.with_vascular_mean = with_vascular_mean
+        self.with_1st_latent_dim = with_1st_latent_dim
         self.distances = None  # will be added later
         self.mean_vascular_activity = None  # will be added later
 
@@ -66,34 +68,6 @@ class EHRFModule(LightningModule):
         )
         self.to_vascular.double()  # our data is passed in float64 (i.e. double)
         self.to_vascular.apply(self.init_weights)
-
-        # ConvNN structure
-        """
-        self.to_latent_conv = nn.Sequential(
-            torch.nn.Conv2d(
-                in_channels=1,
-                out_channels=1,
-                kernel_size=3,
-                stride=1,  # keeping the default stride
-                padding=1,  # padding='same'  # keeps the 2D dims of the input image
-            ),
-            nn.ReLU(),
-            torch.nn.Conv2d(
-                in_channels=1,
-                out_channels=1,
-                kernel_size=3,
-                stride=1,  # keeping the default stride
-                padding=1,  # padding='same'  # keeps the 2D dims of the input image
-            ),
-            nn.ReLU(),
-            torch.nn.MaxPool2d(
-                kernel_size=2,
-                stride=2,  # we want to reduce dimension ("down-sample") by pooling
-                padding=0,
-            )
-        )
-        self.to_vascu_conv = nn.Linear(25 * 3, self.y_size)
-        """
 
         # loss function
         self.criterion = torch.nn.MSELoss()
@@ -150,17 +124,18 @@ class EHRFModule(LightningModule):
                 # adding vascular activity mean as a bias
                 vascu_pred[i] += self.mean_vascular_activity
             #  each neuron is weighted by distance from blood vessel
-            vascu_pred[i] += ((1 / self.distances) * latent_space[i, :, 0]).sum(dim=1)
+            if self.with_1st_latent_dim:
+                vascu_pred[i] += ((1 / self.distances) * latent_space[i, :, 0]).sum(dim=1)
         # -------- END OPTION 1 --------
 
-        # -------- OPTION 3: Linear layer to Latent-Space --------
+        # -------- OPTION 2: Linear layer to Latent-Space --------
         """
         batch_x = batch_x.unsqueeze(dim=1).float()
         latent_vector = self.to_latent_conv(batch_x)
         latent_vector = torch.flatten(latent_vector, start_dim=1)
         vascu_pred = self.to_vascu_conv(latent_vector).double()
         """
-        # -------- END OPTION 3 --------
+        # -------- END OPTION 2 --------
 
         return vascu_pred
 
@@ -215,7 +190,9 @@ class EHRFModule(LightningModule):
 
     def test_epoch_end(self, outputs: List[Any]):
         if self.show_weight_heatmap:
-            fig = px.imshow(self.net.weight.to('cpu').detach().numpy())
+            print(">> [1st Layer's] Weight: \n", self.to_latent_space[0].weight)
+            print(">> [1st Layer's] Bias: \n", self.to_latent_space[0].weight)
+            fig = px.imshow(self.to_latent_space[0].weight.to('cpu').detach().numpy())
             fig.show()
 
     def on_epoch_end(self):

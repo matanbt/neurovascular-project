@@ -29,8 +29,9 @@ model:
   latent_dim: 1
   hidden_layers: 0
   hidden_layer_dim: 100
-  with_vascular_mean: False
   hidden_dropout: 0
+  with_vascular_mean: True
+  with_1st_latent_dim: True
 
 datamodule:
   batch_size: 64

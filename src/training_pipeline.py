@@ -52,8 +52,11 @@ def train(config: DictConfig) -> Optional[float]:
     log.info(f"Instantiating model <{config.model._target_}>")
     model: LightningModule = hydra.utils.instantiate(config.model)
     if getattr(model, "set_extras", None):
-        # In case model includes `set_extras` method, will set it with datamodule extras
+        # In case model includes `set_extras` method, will set it with datamodule extras.
         model.set_extras(datamodule.extras)
+    if getattr(model, "mock_forward_pass"):
+        # In case the model includes `mock_forward_pass` method, we want to run it to complete the init.
+        model.mock_forward_pass()
 
     # Init lightning callbacks
     callbacks: List[Callback] = []

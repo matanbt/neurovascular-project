@@ -2,6 +2,7 @@ import os
 from typing import List, Optional
 
 import hydra
+import torch
 from omegaconf import DictConfig, open_dict
 from pytorch_lightning import (
     Callback,
@@ -54,7 +55,7 @@ def train(config: DictConfig) -> Optional[float]:
     if getattr(model, "set_extras", None):
         # In case model includes `set_extras` method, will set it with datamodule extras.
         model.set_extras(datamodule.extras)
-    if getattr(model, "mock_forward_pass"):
+    if getattr(model, "mock_forward_pass", None):
         # In case the model includes `mock_forward_pass` method, we want to run it to complete the init.
         model.mock_forward_pass()
 
@@ -112,6 +113,17 @@ def train(config: DictConfig) -> Optional[float]:
             ckpt_path = None
         log.info("Starting testing!")
         trainer.test(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
+
+    if config.model.get('generate_pred_csv'):
+        # Saves predictions to CSV for post-analysis' sake
+        log.info('Writing all prediction to csv files...')
+        import numpy as np
+        preds = trainer.predict(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
+        preds = torch.vstack(preds).numpy()
+        np.savetxt('generated_preds.csv', preds)
+        np.savetxt('generated_idx.csv',
+                   np.vstack([datamodule.dataset.idx_vector, datamodule.dataset.time_vector]))
+        np.savetxt('generated_true.csv', datamodule.dataset.true_vector)
 
     # Make sure everything closed properly
     log.info("Finalizing!")

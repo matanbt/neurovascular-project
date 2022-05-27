@@ -235,6 +235,8 @@ class NVDataset_EHRF(Dataset):
 
         # the effective time vector, truncating the window edges
         self.time_vector = self.fetcher.time_vector_array[self.max_window_len: -self.max_window_len]
+        self.idx_vector = np.arange(len(self.fetcher.time_vector_array))[self.max_window_len: -self.max_window_len]
+        self.true_vector = self.vascu_activity_array.T[self.max_window_len: -self.max_window_len]
 
         self.distances = None
         self._get_distances()
@@ -298,10 +300,9 @@ class NVDataset_EHRF(Dataset):
 
         return self.distances
 
-    def _get_mean_vascular_activity(self):
+    def _get_mean_vascular_activity(self, end_calc_idx=2000):
         """ returns the mean vascular activity of the first half of the data """
-        end_calc_idx = len(self.time_vector) // 2
-        return self.vascu_activity_array[:end_calc_idx].mean(axis=1)
+        return self.vascu_activity_array[:, :end_calc_idx].mean(axis=1)
 
     def get_extras(self):
         """ Defines data to pass to the model BEFORE training """

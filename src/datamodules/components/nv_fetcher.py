@@ -110,7 +110,6 @@ class NVDatasetFetcher:
         for vessel in self.vascu_activity_array:
             np.random.shuffle(vessel)
 
-
     def validate_dims(self):
         """
             Sanity checks for the dimensions of the loaded data

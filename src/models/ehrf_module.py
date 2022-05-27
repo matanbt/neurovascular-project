@@ -104,6 +104,10 @@ class EHRFModule(LightningModule):
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device).double()
 
     def forward(self, batch_x: torch.Tensor):
+        if isinstance(batch_x, list):
+            # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
+            batch_x = batch_x[0]
+
         vascu_pred = torch.zeros(batch_x.shape[0], self.y_size,
                                  device=self.device, dtype=torch.double)
         self.distances = self.distances.to(device=self.device)
@@ -191,7 +195,7 @@ class EHRFModule(LightningModule):
     def test_epoch_end(self, outputs: List[Any]):
         if self.show_weight_heatmap:
             print(">> [1st Layer's] Weight: \n", self.to_latent_space[0].weight)
-            print(">> [1st Layer's] Bias: \n", self.to_latent_space[0].weight)
+            print(">> [1st Layer's] Bias: \n", self.to_latent_space[0].bias)
             fig = px.imshow(self.to_latent_space[0].weight.to('cpu').detach().numpy())
             fig.show()
 

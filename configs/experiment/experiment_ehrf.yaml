@@ -33,6 +33,9 @@ model:
   with_vascular_mean: True
   with_1st_latent_dim: True
 
+  # Flags:
+  generate_pred_csv: True
+
 datamodule:
   batch_size: 64
   dataset_object:

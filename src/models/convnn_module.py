@@ -147,6 +147,10 @@ class ConvNNHRFModule(LightningModule):
         if self.mean_vascular_activity is not None:
             self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
 
+        if isinstance(batch_x, list):
+            # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
+            batch_x = batch_x[0]
+
         batch_x = batch_x.unsqueeze(dim=1).double()  # "adds" 1-channel
         features_vector = self.feature_extractor(batch_x)
         vascu_pred = self.regressor(features_vector)

@@ -37,6 +37,9 @@ model:
   regressor_hidden_layers_list: [500, 500,]
   regressor_hidden_layers_dropout: 0.5
 
+  # Flags:
+  generate_pred_csv: True
+
 datamodule:
   batch_size: 32
   dataset_object:

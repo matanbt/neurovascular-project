@@ -5,7 +5,7 @@
 
 defaults:
   - override /datamodule: neurovascu.yaml
-  - override /model: lstm.yaml
+  - override /model: rnn.yaml
   - override /callbacks: default.yaml
   - override /logger: csv.yaml
   - override /trainer: default.yaml
@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "lstm_v1"
+name: "rnn_v1"
 
 seed: 42
 
@@ -29,13 +29,15 @@ model:
   weight_decay: 3.174677841481573e-05
 
   # Feature Extractor
-  lstm_dropout: 0.3
-  lstm_hidden_dim: 500
-  lstm_layers_count: 1
+  rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
+  rnn_dropout: 0.3
+  rnn_hidden_dim: 500
+  rnn_layers_count: 1
+  rnn_bidirectional: True
 
 
   # Regressor
-  regressor_hidden_layers_list: [500,]
+  regressor_hidden_layers_list: [] #[500,]
   regressor_hidden_layers_dropout: 0.4
 
   # Flags:

@@ -13,16 +13,18 @@ from src import utils
 log = utils.get_logger(__name__)
 
 
-class LSTMHRFModule(LightningModule):
+class RNNHRFModule(LightningModule):
     def __init__(
         self,
         x_size,
         y_size,
 
         # LSTM Model's Hyper-parameters:
-        lstm_dropout: float = 0.3,
-        lstm_hidden_dim: int = 500,
-        lstm_layers_count: int = 1,
+        rnn_model_type: str = 'LSTM',
+        rnn_dropout: float = 0.3,  # dropout between RNN layers
+        rnn_hidden_dim: int = 500,
+        rnn_layers_count: int = 1,
+        rnn_bidirectional: bool = False,
 
         # Regressor Model's Hyper-parameters:
         regressor_hidden_layers_list: list = (500, ),  # dims for the hidden FC layers of regressor
@@ -45,13 +47,18 @@ class LSTMHRFModule(LightningModule):
         self.distances = None  # will be added later
         self.mean_vascular_activity = None  # will be added later
 
-        # Build LSTM as feature extractor (alternative)
-        lstm_layers = [nn.LSTM(input_size=self.neuron_count,
-                               hidden_size=lstm_hidden_dim,
-                               num_layers=lstm_layers_count,
-                               dropout=lstm_dropout,
-                               batch_first=True)]
-        self.feature_extractor = nn.Sequential(*lstm_layers)
+        RNN_Model = self._get_rnn_model(rnn_model_type)
+
+        # Build RNN as feature extractor (alternative)
+        rnn_layers = [
+            RNN_Model(input_size=self.neuron_count,
+                      hidden_size=rnn_hidden_dim,
+                      num_layers=rnn_layers_count,
+                      dropout=rnn_dropout,
+                      bidirectional=rnn_bidirectional,
+                      batch_first=True)
+            ]
+        self.feature_extractor = nn.Sequential(*rnn_layers)
 
         # Build the regressor:
         fc_layers = []
@@ -117,6 +124,18 @@ class LSTMHRFModule(LightningModule):
         # Stuff we can do only after the first forward pass:
         self.regressor.apply(self.init_weights)
         log.info(self.regressor)
+
+    def _get_rnn_model(self, rnn_model_type: str ) -> torch.nn.Module:
+        """ Map user-string to RNN module """
+        # List of possible rnn models:
+        rnn_models = {
+            'LSTM': nn.LSTM,
+            'GRU': nn.GRU
+        }
+        possible_rnn_models = list(rnn_models.keys())
+        assert rnn_model_type in possible_rnn_models, \
+            f'Expected RNN model to be from {possible_rnn_models} but got {rnn_model_type}'
+        return rnn_models[rnn_model_type]
 
     def forward(self, batch_x: torch.Tensor):
         if self.distances is not None:

@@ -1,0 +1,18 @@
+_target_: src.models.lstm_module.LSTMHRFModule
+
+# Optimizer
+lr: 0.0006142260891022587
+weight_decay: 3.174677841481573e-05
+
+# Feature Extractor
+lstm_dropout: 0.3
+lstm_hidden_dim: 500
+lstm_layers_count: 1
+
+# Regressor
+regressor_hidden_layers_list: [500, ]
+regressor_hidden_layers_dropout: 0.4
+
+# These are (currently) added dynamically, based on the dataset metadata:
+# x_size: -
+# y_size: -

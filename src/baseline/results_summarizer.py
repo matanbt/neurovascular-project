@@ -29,12 +29,13 @@ class ResultsSummarizer:
         self.y_pred_train = y_pred_train
         self.y_pred_test = y_pred_test
 
-    def plot_vascular_pred(self):
+    def plot_vascular_pred(self, idx=None):
         """
         Given vascular activity and predicted vascular activity, plots them
         """
+        idx = idx or np.arange(20)
         # we only take the first 50 vessels (to not overload plotly...)
-        df = self.get_true_and_pred_to_df(self.y[:, :50], self.y_pred[:, :50])
+        df = self.get_true_and_pred_to_df(self.y[:, idx], self.y_pred[:, idx])
 
         fig = px.line(df)
         fig.update_xaxes(rangeslider_visible=True)
@@ -54,8 +55,8 @@ class ResultsSummarizer:
 
     def plot_mse_per_vessel(self):
         """ Plots the (Normalized Root) MSE of each blood vessel, test-set"""
-        y, y_pred = self.y_test, self.y_pred_test
-        y, y_pred = y.T, y_pred.T
+        # y, y_pred = self.y_test.T, self.y_pred_test.T
+        y, y_pred = self.y.T, self.y_pred.T
         vessels_mse = np.zeros(y.shape[0])
 
         for i in range(y.shape[0]):
@@ -71,6 +72,12 @@ class ResultsSummarizer:
 
         print("Average of NRMSE", vessels_mse.mean())
         return vessels_mse
+
+    def describe(self):
+        _mse = mean_squared_error(self.y, self.y_pred)
+        _mae = mean_absolute_error(self.y, self.y_pred)
+        _r2 = r2_score(self.y, self.y_pred)
+        print(f">> Training: MSE={_mse}, R^2={_r2}, MAE={_mae}")
 
     def sanity_checks_plot(self):
         # plot MSE as function of diameter

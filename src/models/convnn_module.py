@@ -94,6 +94,7 @@ class ConvNNHRFModule(LightningModule):
         self.feature_extractor.double()  # our data is passed in float64 (i.e. double)
         self.feature_extractor.apply(self.init_weights)
         log.info(self.feature_extractor)
+
         self.regressor.double()  # our data is passed in float64 (i.e. double)
         # Initializing the regressor weight is done after the mock forward pass...
 

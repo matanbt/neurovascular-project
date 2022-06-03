@@ -32,3 +32,14 @@ dataset_object:
   window_len_neuro_back: 5
   window_len_neuro_forward: 2
 
+# [Option-3]: NVDataset_Tabular
+#dataset_object:
+#  _target_: src.datamodules.components.nv_datasets.NVDataset_Tabular
+#  data_dir: ${data_dir}  # data_dir is specified in config.yaml
+#  dataset_name: 2021_02_01_neurovascular_datasets
+#  include_vascular_idx: True
+#  include_vascular_avg: True
+#  include_vascular_distances: True
+#  window_len_neuro_back: 5
+#  window_len_neuro_forward: 3
+#  neuro_aggr_method: 'flatten'

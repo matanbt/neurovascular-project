@@ -136,6 +136,9 @@ class ConvNNHRFModule(LightningModule):
     def mock_forward_pass(self):
         """ Runs a mock forward pass, in order to initialize dimensions (we also initialize what we need afterwards)"""
         with torch.no_grad():
+            if isinstance(self.x_size, int):
+                # Hack so 1-dimensional X will work
+                self.x_size = [self.x_size]
             self.forward(torch.rand(1, *self.x_size))
 
         # Stuff we can do only after the first forward pass:

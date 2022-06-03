@@ -6,7 +6,7 @@ from pytorch_lightning.utilities.types import EVAL_DATALOADERS
 from torch.utils.data import ConcatDataset, DataLoader, Dataset, random_split, Subset
 from torchvision.transforms import transforms
 
-from src.datamodules.components.nv_datasets import NVDataset_Classic, NVDataset_EHRF
+from src.datamodules.components.nv_datasets import NVDataset_Classic, NVDataset_EHRF, NVDataset_Tabular
 
 
 class NVDataModule(LightningDataModule):

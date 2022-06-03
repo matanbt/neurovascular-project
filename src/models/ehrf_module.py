@@ -23,6 +23,9 @@ class EHRFModule(LightningModule):
         with_vascular_mean: bool = False,  # Whether to insert vascular mean before prediction (should help)
         with_1st_latent_dim: bool = True,
 
+        # Average Baseline config
+        predict_with_mean_vascular_only: bool = False,  # Naive model predicts the mean activity
+
         lr: float = 0.001,
         weight_decay: float = 0.0005,
 
@@ -128,18 +131,11 @@ class EHRFModule(LightningModule):
                 # adding vascular activity mean as a bias
                 vascu_pred[i] += self.mean_vascular_activity
             #  each neuron is weighted by distance from blood vessel
-            if self.with_1st_latent_dim:
+            if self.with_1st_latent_dim and not self.hparams.predict_with_mean_vascular_only:
                 vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1)
-        # -------- END OPTION 1 --------
-
-        # -------- OPTION 2: Linear layer to Latent-Space --------
-        """
-        batch_x = batch_x.unsqueeze(dim=1).float()
-        latent_vector = self.to_latent_conv(batch_x)
-        latent_vector = torch.flatten(latent_vector, start_dim=1)
-        vascu_pred = self.to_vascu_conv(latent_vector).double()
-        """
-        # -------- END OPTION 2 --------
+            elif self.hparams.predict_with_mean_vascular_only:
+                # HACK for predicting mean only for naive model configuration
+                vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1) * 0
 
         return vascu_pred
 

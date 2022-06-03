@@ -87,10 +87,10 @@ class NVDataset_Base(Dataset):
 
         return self.distances
 
-    def _get_mean_vascular_activity(self, end_calc_idx=2000):
-        """ returns the mean vascular activity of the first half of the data """
-        if self.vascu_activity_array is not None:
-            return self.vascu_activity_array
+    def _get_mean_vascular_activity(self, end_calc_idx=2200):
+        """ returns the mean vascular activity of the first part of the data """
+        if self.mean_vascular_activity is not None:
+            return self.mean_vascular_activity
         self.mean_vascular_activity = self.vascu_activity_array[:, :end_calc_idx].mean(axis=1)
         return self.mean_vascular_activity
 

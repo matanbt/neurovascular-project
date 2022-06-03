@@ -43,7 +43,7 @@ class ConvNNHRFModule(LightningModule):
 
         # More data:
         self.x_size, self.y_size = x_size, y_size
-        self.neuron_count, self.neuro_window_size, self.vessels_count = x_size[0], x_size[1], y_size
+        # self.neuron_count, self.neuro_window_size, self.vessels_count = x_size[0], x_size[1], y_size
         self.distances = None  # will be added later
         self.mean_vascular_activity = None  # will be added later
 

@@ -129,7 +129,7 @@ class EHRFModule(LightningModule):
                 vascu_pred[i] += self.mean_vascular_activity
             #  each neuron is weighted by distance from blood vessel
             if self.with_1st_latent_dim:
-                vascu_pred[i] += ((1 / self.distances) * latent_space[i, :, 0]).sum(dim=1)
+                vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1)
         # -------- END OPTION 1 --------
 
         # -------- OPTION 2: Linear layer to Latent-Space --------

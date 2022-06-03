@@ -5,7 +5,7 @@ datasets_names:
   - 2021_02_01_neurovascular_datasets
   # - TODO ...Add more datasets
 batch_size: 64
-train_val_test_split: [2000, 950, 1]
+train_val_test_split: [2200, 750, 1]  # DO NOT OVERRIDE THIS - As we want the val-set to be the same across experiments.
 num_workers: 0
 pin_memory: False
 

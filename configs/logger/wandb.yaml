@@ -2,7 +2,7 @@
 
 wandb:
   _target_: pytorch_lightning.loggers.wandb.WandbLogger
-  project: "test-neurovascular-ml"  # "baseline", "ar-model", ...
+  project: "neurovascular-ml-server-experiments"  # "baseline", "ar-model", ...
   name: ${name}
   save_dir: "."
   offline: False # set True to store all logs only locally

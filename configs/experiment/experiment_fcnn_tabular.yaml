@@ -7,7 +7,7 @@ defaults:
   - override /datamodule: neurovascu.yaml
   - override /model: convnn.yaml
   - override /callbacks: default.yaml
-  - override /logger: comet.yaml
+  - override /logger: wandb.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -43,14 +43,13 @@ model:
   generate_pred_csv: True
 
 datamodule:
-  train_val_test_split: [2000, 950, 1]
   batch_size: 64
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_Tabular
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
     dataset_name: 2021_02_01_neurovascular_datasets
     include_vascular_idx: True
-    include_vascular_avg: False
+    include_vascular_avg: True
     include_vascular_distances: True
     window_len_neuro_back: 10
     window_len_neuro_forward: 5

@@ -7,7 +7,7 @@ defaults:
   - override /datamodule: neurovascu.yaml
   - override /model: linear_regression.yaml
   - override /callbacks: default.yaml
-  - override /logger: comet.yaml
+  - override /logger: wandb.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -24,10 +24,10 @@ trainer:
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.009192978269079312
-  weight_decay: 1.0525740546617301e-05
+  lr: 0.009848550767829235
+  weight_decay: 1.0892661204902117e-05
   dropout: 0
-  #   For windows (2, 1, 0), Best parameters: { 'model.lr': 0.009192978269079312, 'model.weight_decay': 1.0525740546617301e-05 }
+  #   For windows (2, 1, 0)
 
 datamodule:
   batch_size: 64
@@ -42,8 +42,3 @@ datamodule:
     poly_degree:
     aggregate_window: "flatten"
     scale_method:
-
-logger:
-  wandb:
-    tags: ["neurovascular-experiments", "experiments-phase-1", "${name}"]
-    project: "experiments-phase-1"

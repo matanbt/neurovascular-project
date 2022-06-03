@@ -58,7 +58,7 @@ hydra:
       model.weight_decay:
         type: float
         low: 0
-        high: 0.01
+        high: 0.1
 #      model.hidden_layers:
 #        type: categorical
 #        choices: [0, 1, 2, 3, 5]

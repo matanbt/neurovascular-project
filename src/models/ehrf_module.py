@@ -116,7 +116,6 @@ class EHRFModule(LightningModule):
         self.distances = self.distances.to(device=self.device)
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
 
-        # -------- OPTION 1: Linear layer to Latent-Space --------
         flattened_x = torch.flatten(batch_x, start_dim=1)
         latent_space = self.to_latent_space(flattened_x)
 

@@ -1,0 +1,11 @@
+_target_: src.models.linear_net_module.LinearNetModule
+
+lr: 0.001
+weight_decay: 0.0005
+dropout: 0
+hidden_size: 500
+num_layers: 2
+
+# These are (currently) added dynamically, based on the dataset metadata:
+# x_size: -
+# y_size: -

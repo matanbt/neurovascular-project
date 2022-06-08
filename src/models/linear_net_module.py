@@ -11,7 +11,7 @@ class LinearNetModule(LightningModule):
         self,
         x_size,
         y_size,
-        hidden_size,
+        hidden_sizes,
         num_layers,
         lr: float = 0.001,
         weight_decay: float = 0.0005,
@@ -23,17 +23,23 @@ class LinearNetModule(LightningModule):
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
+        # we allow passing single hidden size for the entire net, or hidden size for each layer
+        if type(hidden_sizes) == int:
+            hidden_sizes = [hidden_sizes] * (num_layers - 1)
+        else:
+            assert len(hidden_sizes) == (num_layers - 1)
+
         self.net = ModuleList()
 
-        self.net.append(Linear(x_size, hidden_size))
+        self.net.append(Linear(x_size, hidden_sizes[0]))
         self.net.append(Dropout(p=dropout))
 
         # we assume num_layers >= 2, if not can use linear regression instead
         for i in range(num_layers - 2):
-            self.net.append(Linear(hidden_size, hidden_size))
+            self.net.append(Linear(hidden_sizes[i], hidden_sizes[i+1]))
             self.net.append(Dropout(p=dropout))
 
-        self.net.append(Linear(hidden_size, y_size))
+        self.net.append(Linear(hidden_sizes[-1], y_size))
 
         self.net.double()  # our data is passed in float64 (i.e. double)
 

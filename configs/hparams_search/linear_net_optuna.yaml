@@ -31,7 +31,7 @@ hydra:
     direction: minimize
 
     # total number of runs that will be executed
-    n_trials: 200
+    n_trials: 100
 
     # choose Optuna hyperparameter sampler
     # docs: https://optuna.readthedocs.io/en/stable/reference/samplers.html
@@ -55,15 +55,15 @@ hydra:
       model.weight_decay:
         type: float
         low: 0
-        high: 0.01
+        high: 0.0002
       model.num_layers:
         type: categorical
-        choices: [2, 3, 4, 5]
-      model.hidden_size:
+        choices: [5, 6]
+      model.hidden_sizes:
         type: categorical
-        choices: [100, 150, 200, 250, 300]
+        choices: [500, 600, 700]
       model.dropout:
         type: float
-        low: 0
-        high: 0.7
+        low: 0.5
+        high: 0.6
 

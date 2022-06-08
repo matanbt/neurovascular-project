@@ -14,21 +14,21 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "linear_net_v1"
+name: "linear_net_v2"
 
 seed: 42
 
 trainer:
-  min_epochs: 100
+  min_epochs: 200
   max_epochs: 500
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.001
-  weight_decay: 0 #1.0892661204902117e-05
-  dropout: 0
-  hidden_size: 500
-  num_layers: 4
+  lr: 0.0008
+  weight_decay: 16e-06 #1.0892661204902117e-05
+  dropout: 0.52
+  hidden_sizes: [200, 400, 500, 200]
+  num_layers: 5
   #   For windows (2, 1, 0)
 
 datamodule:

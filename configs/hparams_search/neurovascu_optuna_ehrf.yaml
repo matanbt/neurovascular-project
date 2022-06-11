@@ -75,9 +75,9 @@ hydra:
       model.with_vascular_mean:
         type: categorical
         choices: [True, False]
-      model.with_1st_latent_dim:
-        type: categorical
-        choices: [ True, False ]
+#      model.with_1st_latent_dim:
+#        type: categorical
+#        choices: [ True, False ]
       model.with_distances:
         type: categorical
         choices: [ True, False ]

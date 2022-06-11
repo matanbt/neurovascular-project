@@ -22,6 +22,7 @@ class EHRFModule(LightningModule):
         hidden_dropout: float = 0,         # Dropout layer to the latent transform
         with_vascular_mean: bool = False,  # Whether to insert vascular mean before prediction (should help)
         with_1st_latent_dim: bool = True,
+        with_distances: bool = True,       # Whether to include distances in our formula
 
         # Average Baseline config
         predict_with_mean_vascular_only: bool = False,  # Naive model predicts the mean activity
@@ -103,6 +104,10 @@ class EHRFModule(LightningModule):
         """ Set extras from dataset (MUST be called before training) """
         self.distances = extras['distances']
         self.distances = self.distances.to(device=self.device).double()
+        if not self.hparams.with_distances:
+            # In case we want to ignore the distances, we simply make them the same (i.e. zero).
+            self.distances = torch.zeros_like(self.distances)
+
         self.mean_vascular_activity = torch.Tensor(extras['mean_vascular_activity'])
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device).double()
 

@@ -20,12 +20,12 @@ seed: 42
 
 trainer:
   min_epochs: 100
-  max_epochs: 700
+  max_epochs: 400
   gradient_clip_val: 0.5
 
 model:
   # Optimizer
-  lr: 0.0006142260891022587
+  lr: 0.0003142260
   weight_decay: 3.174677841481573e-05
 
   # Feature Extractor (We shut this part down, as we want the FC part only)

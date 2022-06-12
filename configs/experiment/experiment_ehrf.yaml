@@ -35,7 +35,7 @@ model:
   with_distances: True
 
   # Flags:
-  generate_pred_csv: True
+  generate_pred_csv: False
 
 datamodule:
   batch_size: 64

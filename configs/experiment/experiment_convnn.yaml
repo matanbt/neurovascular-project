@@ -25,7 +25,7 @@ trainer:
 
 model:
   # Optimizer
-  lr: 0.0006142260891022587
+  lr: 0.0002
   weight_decay: 3.174677841481573e-05
   # Feature Extractor
   conv_filters: [4, 4, 4, 16, 16, 16]
@@ -39,7 +39,7 @@ model:
   regressor_hidden_layers_dropout: 0.4
 
   # Flags:
-  generate_pred_csv: True
+  generate_pred_csv: False
 
 datamodule:
   batch_size: 32

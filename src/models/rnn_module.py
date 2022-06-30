@@ -148,7 +148,7 @@ class RNNHRFModule(LightningModule):
             batch_x = batch_x[0]
 
         batch_x = batch_x.double()
-        batch_x = torch.transpose(batch_x, -2, -1)  # LSTM will run on each timestamp
+        batch_x = torch.transpose(batch_x, -2, -1)  # the recurrence is on each timestamp
         features_vector, _ = self.feature_extractor(batch_x)
         features_vector = features_vector[:, -1, :]  # get last hidden state
         vascu_pred = self.regressor(features_vector)

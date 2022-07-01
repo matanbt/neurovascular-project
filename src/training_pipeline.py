@@ -48,6 +48,7 @@ def train(config: DictConfig) -> Optional[float]:
     with open_dict(config.model):
         config.model["x_size"] = datamodule.x_size
         config.model["y_size"] = datamodule.y_size
+        config.model["vessels_count"] = datamodule.vessels_count
 
     # Init lightning model
     log.info(f"Instantiating model <{config.model._target_}>")

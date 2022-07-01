@@ -5,6 +5,7 @@ from torch import nn
 from pytorch_lightning import LightningModule
 from torchmetrics import MinMetric
 from torchmetrics import MeanSquaredError, MeanAbsoluteError
+from src.utils.handmade_metrics import MeanBestKMSE, NormalizedRootMeanSquaredError
 
 import plotly.express as px
 
@@ -89,10 +90,16 @@ class RNNHRFModule(LightningModule):
         self.train_mse = MeanSquaredError()
         self.val_mse = MeanSquaredError()
         self.test_mse = MeanSquaredError()
-        # TODO NRMSE
+        # "handmade" metrics:
+        self.train_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
+        self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
+        self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
+        self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
+        self.val_nrmse_best = MinMetric()
+        self.val_mbkmse_best = MinMetric()
 
         # debug flags:
         self.show_weight_heatmap = False
@@ -167,8 +174,12 @@ class RNNHRFModule(LightningModule):
 
         # log train metrics
         mse = self.train_mse(preds, targets)
+        nrmse = self.train_nrmse(preds, targets)
+        mbkmse = self.train_mbkmse(preds, targets)
         self.log("train/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         self.log("train/mse", mse, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/nrmse", nrmse, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("train/mbkmse", mbkmse, on_step=False, on_epoch=True, prog_bar=True)
 
         # we can return here dict with any tensors
         # and then read it in some callback or in `training_epoch_end()` below
@@ -184,8 +195,12 @@ class RNNHRFModule(LightningModule):
 
         # log val metrics
         mse = self.val_mse(preds, targets)
+        nrmse = self.val_nrmse(preds, targets)
+        mbkmse = self.val_mbkmse(preds, targets)
         self.log("val/loss", loss, on_step=False, on_epoch=True, prog_bar=False)
         self.log("val/mse", mse, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/nrmse", nrmse, on_step=False, on_epoch=True, prog_bar=True)
+        self.log("val/mbkmse", mbkmse, on_step=False, on_epoch=True, prog_bar=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -193,6 +208,13 @@ class RNNHRFModule(LightningModule):
         mse = self.val_mse.compute()  # get val accuracy from current epoch
         self.val_mse_best.update(mse)
         self.log("val/mse_best", self.val_mse_best.compute(), on_epoch=True, prog_bar=True)
+
+        # log other minimum metrics as well:
+        self.val_nrmse_best.update(self.val_nrmse.compute())
+        self.log("val/nrmse_best", self.val_nrmse_best.compute(), on_epoch=True, prog_bar=True)
+        self.val_mbkmse_best.update(self.val_mbkmse.compute())
+        self.log("val/mbkmse_best", self.val_mbkmse_best.compute(), on_epoch=True, prog_bar=True)
+
 
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
@@ -216,6 +238,10 @@ class RNNHRFModule(LightningModule):
         self.train_mse.reset()
         self.test_mse.reset()
         self.val_mse.reset()
+        self.train_nrmse.reset()
+        self.val_nrmse.reset()
+        self.train_mbkmse.reset()
+        self.val_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

@@ -148,6 +148,18 @@ class LinearNetModule(LightningModule):
         See examples here:
             https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
         """
-        return torch.optim.Adam(
-            params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
-        )
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
+        sch = torch.optim.lr_scheduler.StepLR(
+            optimizer, step_size=10, gamma=0.5)
+        # learning rate scheduler
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": sch,
+                "monitor": "train_loss",
+
+            }
+        }
+        # return torch.optim.Adam(
+        #     params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
+        # )

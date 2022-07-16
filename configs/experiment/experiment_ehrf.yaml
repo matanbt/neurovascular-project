@@ -26,13 +26,20 @@ trainer:
 model:
   lr: 0.0001
   weight_decay: 0.0003
-  latent_dim: 3
-  hidden_layers: 3
-  hidden_layer_dim: 100
-  hidden_dropout: 0.35
+
+  # Neuronal-Conv-1d term
+  with_conv_1d: True
+  with_distances: False
+  conv_1d_hidden_layers: 1
+
+  # Latent residuals term
+  with_latent_fcnn: True
+  latent_hidden_layers: 3
+  latent_hidden_layer_dim: 500
+  latent_hidden_dropout: 0.35
+
+  # Vascular mean term
   with_vascular_mean: True
-  with_1st_latent_dim: True
-  with_distances: True
 
   # Flags:
   generate_pred_csv: False

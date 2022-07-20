@@ -1,0 +1,24 @@
+_target_: src.models.vresnet_module.VResNetModule
+
+# Optimizer
+lr: 0.0006142260891022587
+weight_decay: 3.174677841481573e-05
+
+
+# Flags:
+with_res_connections: True
+with_vascular_mean: False  # whether to insert the vascular mean to the residuals sum
+with_batchnorm: True
+with_droupout: 0
+
+# Model's Hyper-parameters:
+start_hidden_layers_count: 0  # count of the first hidden layers
+end_hidden_layers_count: 0  # count of the last hidden layers
+res_block_layers_count: 3
+res_blocks_count: 5  # how many res-blocks?
+
+
+# These are (currently) added dynamically, based on the dataset metadata:
+# x_size: -
+# y_size: -
+# vessel_count: -

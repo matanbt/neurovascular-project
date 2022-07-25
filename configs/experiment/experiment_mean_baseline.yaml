@@ -35,11 +35,10 @@ model:
   generate_pred_csv: True
 
 datamodule:
-  train_val_test_split: [ 30000, 4000, 1 ]
   batch_size: 128
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
-    dataset_name: 2021_02_01_18_45_51_neurovascular_full_dataset
+    dataset_name: 2021_02_01_19_19_39_neurovascular_full_dataset
     window_len_neuro_back: 1
     window_len_neuro_forward: 0

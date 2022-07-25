@@ -2,7 +2,7 @@ _target_: src.datamodules.neurovascu_datamodule.NVDataModule
 
 data_dir: ${data_dir} # data_dir is specified in config.yaml
 batch_size: 64
-train_val_test_split: [2200, 750, 1]  # DO NOT OVERRIDE THIS - As we want the val-set to be the same across experiments.
+train_val_test_split: [0.85, 0.075, 0.075]  # DO NOT OVERRIDE THIS - As we want the val-set to be the same across experiments.
 num_workers: 0
 pin_memory: False
 
@@ -19,7 +19,7 @@ pin_memory: False
 #  window_len_y: 1
 #  poly_degree:
 #  aggregate_window: "flatten"
-#  scale_method:
+#  scaling_method:
 
 # [Option-2]: NVDataset_EHRF
 dataset_object:
@@ -28,6 +28,7 @@ dataset_object:
   dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
   window_len_neuro_back: 5
   window_len_neuro_forward: 2
+  scaling_method: "neuro_normalize"
 
 # [Option-3]: NVDataset_Tabular
 #dataset_object:

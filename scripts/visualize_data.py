@@ -43,6 +43,7 @@ def plot_neurons(
                                          if trace.name != "neuron_0" else ())
     if visualization_path:
         fig.write_html(os.path.join(visualization_path, "neuro_activity_vis.html"))
+        fig.write_image(os.path.join(visualization_path, "neuro_activity_vis.png"))
     if show_fig:
         fig.show()
 
@@ -77,6 +78,7 @@ def plot_vessels(
                                          if trace.name != "vessel_0" else ())
     if visualization_path:
         fig.write_html(os.path.join(visualization_path, "vascu_activity_vis.html"))
+        fig.write_image(os.path.join(visualization_path, "vascu_activity_vis.png"))
     if show_fig:
         fig.show()
     return fig
@@ -100,6 +102,7 @@ def plot_coords(
     # Epilogue:
     if visualization_path:
         fig.write_html(os.path.join(visualization_path, "coordinates_vis.html"))
+        fig.write_image(os.path.join(visualization_path, "coordinates_vis.png"))
     if show_fig:
         fig.show()
     return fig
@@ -129,6 +132,7 @@ def plot_correlation_of_mean_activity(
     # Epilogue:
     if visualization_path:
         fig.write_html(os.path.join(visualization_path, "mean_activity_corr_vis.html"))
+        fig.write_image(os.path.join(visualization_path, "mean_activity_corr_vis.png"))
     if show_fig:
         fig.show()
     return fig
@@ -153,6 +157,7 @@ def plot_dist_neuro(
     # Epilogue:
     if visualization_path:
         fig.write_html(os.path.join(visualization_path, "neuro_dist_vis.html"))
+        fig.write_image(os.path.join(visualization_path, "neuro_dist_vis.png"))
     if show_fig:
         fig.show()
     return fig
@@ -177,6 +182,7 @@ def plot_dist_vascu(
     # Epilogue:
     if visualization_path:
         fig.write_html(os.path.join(visualization_path, "vascu_dist_vis.html"))
+        fig.write_image(os.path.join(visualization_path, "vascu_dist_vis.png"))
     if show_fig:
         fig.show()
     return fig
@@ -191,7 +197,8 @@ def calc_correlation():
 
 if __name__ == '__main__':
     data_dir = "./data"
-    dataset_name = "2021_02_01_18_45_51_neurovascular_full_dataset"
+    # modify the following dataset_name to visualize another dataset
+    dataset_name = "2021_02_01_19_19_39_neurovascular_full_dataset"
     # path to save visualization artifacts:
     visualization_path = os.path.join(data_dir, dataset_name, "visualizations")
 
@@ -201,6 +208,6 @@ if __name__ == '__main__':
     plot_neurons(fetcher, visualization_path=visualization_path)
     plot_vessels(fetcher, visualization_path=visualization_path)
     plot_coords(fetcher, visualization_path=visualization_path)
-    # plot_correlation_of_mean_activity(fetcher)
+    plot_correlation_of_mean_activity(fetcher)
     plot_dist_neuro(fetcher, visualization_path=visualization_path)
     plot_dist_vascu(fetcher, visualization_path=visualization_path)

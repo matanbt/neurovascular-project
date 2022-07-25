@@ -50,4 +50,3 @@ datamodule:
     dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
     window_len_neuro_back: 5
     window_len_neuro_forward: 3
-    scaling_method:

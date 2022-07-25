@@ -29,7 +29,7 @@ class NVDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str = "data/",
-        train_val_test_split: Tuple[int, int, int] = (2000, 500, 500),
+        train_val_test_split: Tuple[float, float, float] = (0.7, 0.15, 0.15),
         batch_size: int = 64,
         num_workers: int = 0,
         pin_memory: bool = False,
@@ -37,7 +37,7 @@ class NVDataModule(LightningDataModule):
     ):
         super().__init__()
 
-        self.dataset = dataset_object
+        self.dataset: Dataset = dataset_object
 
         # allows accessing init params with 'self.hparams' attribute
         self.save_hyperparameters(logger=False)
@@ -82,7 +82,10 @@ class NVDataModule(LightningDataModule):
         # load datasets only if they're not loaded already
         if not self.data_train and not self.data_val and not self.data_test:
             dataset = self.dataset
-            train_size, val_size, test_size = self.hparams.train_val_test_split
+            train_portion, val_portion, test_portion = self.hparams.train_val_test_split
+            train_size = int(train_portion * len(dataset))
+            val_size = int(val_portion * len(dataset))
+            test_size = int(test_portion * len(dataset))
 
             self.data_train = Subset(dataset, list(range(0, train_size)))
             self.data_val = Subset(dataset, list(range(train_size,

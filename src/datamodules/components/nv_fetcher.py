@@ -45,7 +45,7 @@ class NVDatasetFetcher:
         # 4. Fetch what we want (as numpy arrays)
         self.neuro_activity_array = neuro_timeseries.get(map_names_by_dataset['neuro_activity_name'][dataset_name])  # matrix of [neurons X timestamps]
         self.vascu_activity_array = vascu_timeseries.get("time_varying_vascular_diameter").T  # matrix of [blood X timestamps]
-        self.time_vector_array = np.arange(self.neuro_activity_array.shape[-1])  # vector of [timestamps]
+        self.time_vector_array = np.arange(self.vascu_activity_array.shape[-1])  # vector of [timestamps]
         self.neuro_coord_array = self._get_coords(neuro_coord_df)
         self.vascu_coord_array = self._get_coords(vascu_coord_df)
 

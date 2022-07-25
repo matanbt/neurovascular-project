@@ -52,6 +52,7 @@ class NVDatasetFetcher:
         # 5. Ad-hoc datasets fixes
         if dataset_name in ("2021_02_01_18_45_51_neurovascular_full_dataset", "2021_02_01_19_19_39_neurovascular_full_dataset"):
             self.neuro_activity_array = self.neuro_activity_array.T
+        if dataset_name in ("2021_02_01_18_45_51_neurovascular_full_dataset", "2021_02_01_18_45_51_neurovascular_partial_dataset", "2021_02_01_19_19_39_neurovascular_full_dataset"):
             # This last row appears twice, we shall remove the second appearance
             self.vascu_activity_array = self.vascu_activity_array[:-1, :]
 

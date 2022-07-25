@@ -76,15 +76,12 @@ class EHRFModule(LightningModule):
             latent_fcnn_layers.append(nn.ReLU())
         latent_fcnn_layers.append(nn.Linear(curr_layer_dim, self.y_size))
 
-        # Build the latent space to vascular activity transformation
-        self.to_vascular = nn.Sequential(
-            nn.ReLU(),
-            nn.Linear(self.neuron_count * (self.latent_dim - 1), self.y_size),
-            nn.ReLU(),
-            nn.Linear(self.y_size, self.y_size),
-        )
-        self.to_vascular.double()  # our data is passed in float64 (i.e. double)
-        self.to_vascular.apply(self.init_weights)
+        if self.with_latent_fcnn:
+            self.latent_fcnn = nn.Sequential(*latent_fcnn_layers)
+            self.latent_fcnn.double()  # our data is passed in float64 (i.e. double)
+            self.latent_fcnn.apply(self.init_weights)
+
+        # -----------------------------------
 
         # loss function
         self.criterion = torch.nn.MSELoss()
@@ -141,25 +138,28 @@ class EHRFModule(LightningModule):
         self.distances = self.distances.to(device=self.device)
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
 
-        flattened_x = torch.flatten(batch_x, start_dim=1)
-        latent_space = self.to_latent_space(flattened_x)
+        # Calculate the neurons after convolution
+        if self.with_conv_1d:
+            batch_x_for_conv = torch.transpose(batch_x, 1, 2)
+            neuronal_convoluted = self.neuronal_conv_1d_layers(batch_x_for_conv)
+            neuronal_convoluted = neuronal_convoluted.squeeze(dim=1)
 
-        # From latent to vascular activity
-        latent_space = latent_space.view(batch_x.shape[0], batch_x.shape[1], self.latent_dim)
-        if self.latent_dim > 1:
-            # 1. Predict based on the last latent dims
-            vascu_pred = self.to_vascular(latent_space[:, :, 1:].flatten(start_dim=1))
-        # 2. Predict based on the first latent dim, with special function
+        # Calculate latent residuals for the vascular activity
+        if self.with_latent_fcnn:
+            latent_residuals = self.latent_fcnn(batch_x)
+            vascu_pred += latent_residuals
+
+        # 2. Predict based on the convoluted neuronal, with special function
         for i in range(batch_x.shape[0]):
             if self.with_vascular_mean:
                 # adding vascular activity mean as a bias
                 vascu_pred[i] += self.mean_vascular_activity
             #  each neuron is weighted by distance from blood vessel
-            if self.with_1st_latent_dim and not self.hparams.predict_with_mean_vascular_only:
-                vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1)
+            if self.with_conv_1d and not self.hparams.predict_with_mean_vascular_only:
+                vascu_pred[i] += (torch.exp(-self.distances) * neuronal_convoluted[i, :]).sum(dim=1)
             elif self.hparams.predict_with_mean_vascular_only:
                 # HACK for predicting mean only for naive model configuration
-                vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1) * 0
+                vascu_pred[i] += (torch.exp(-self.distances) * neuronal_convoluted[i, :]).sum(dim=1) * 0
 
         return vascu_pred
 

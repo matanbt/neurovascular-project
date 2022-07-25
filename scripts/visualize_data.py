@@ -191,7 +191,7 @@ def calc_correlation():
 
 if __name__ == '__main__':
     data_dir = "./data"
-    dataset_name = "2021_02_01_neurovascular_datasets"
+    dataset_name = "2021_02_01_18_45_51_neurovascular_full_dataset"
     # path to save visualization artifacts:
     visualization_path = os.path.join(data_dir, dataset_name, "visualizations")
 

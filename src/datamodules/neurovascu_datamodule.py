@@ -29,7 +29,6 @@ class NVDataModule(LightningDataModule):
     def __init__(
         self,
         data_dir: str = "data/",
-        datasets_names: Tuple[str] = ("2021_02_01_neurovascular_datasets",),
         train_val_test_split: Tuple[int, int, int] = (2000, 500, 500),
         batch_size: int = 64,
         num_workers: int = 0,

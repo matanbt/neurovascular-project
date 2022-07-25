@@ -23,7 +23,7 @@ class NVDataset_Base(Dataset):
     """
     def __init__(self,
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
                  scaling_method=None, destroy_data=False, **kwargs):
         self.dataset_name = dataset_name
         self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
@@ -112,7 +112,7 @@ class NVDataset_Classic(NVDataset_Base):
     def __init__(self,
                  # Dataset source:
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
 
                  # Dataset hyper parameters:
                  window_len_neuro_back: int = 5,
@@ -261,12 +261,12 @@ class NVDataset_EHRF(NVDataset_Base):
     def __init__(self,
                  # Dataset source:
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
 
                  # Dataset hyper parameters:
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 2,
-                 scaling_method: str = None,
+                 scaling_method: str = None,  # maybe scaling with Sigmoid will help?
                  destroy_data: bool = False
                  ):
         """
@@ -365,7 +365,7 @@ class NVDataset_Tabular(NVDataset_Base):
     def __init__(self,
                  # Dataset source:
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
 
                  # Dataset hyper parameters (Tabular Features):
                  include_vascular_idx: bool = True,

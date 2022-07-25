@@ -17,6 +17,7 @@ class FullyConnectedNet(nn.Module):
         with_dropout_hidden: float = 0,
         with_batch_norm_hidden: bool = True,
         with_batch_norm_end: bool = True,
+        with_relu_end: bool = False,
     ):
         """
         Generates block of H * [Linear -> BN -> ReLU] -> [Linear -> BN]
@@ -28,6 +29,7 @@ class FullyConnectedNet(nn.Module):
             with_dropout_hidden: defines probability of dropout (p=0 will exclude dropout, recommended when including BN)
             with_batch_norm_hidden: whether to include batch-norm layer after each linear activation
             with_batch_norm_end: whether to include batch-norm layer in the very end.
+            with_relu_end: whether to include ReLU activation in the end
         """
         super().__init__()
 
@@ -54,6 +56,8 @@ class FullyConnectedNet(nn.Module):
         layers_list += [nn.Linear(in_dim, output_size)]
         if with_batch_norm_end:
             layers_list += [nn.BatchNorm1d(output_size)]
+        if with_relu_end:
+            layers_list += [nn.ReLU()]
 
         # Build all into sequential module
         self.net = nn.Sequential(*layers_list)

@@ -19,14 +19,14 @@ name: "vresnet_v1"
 seed: 42
 
 trainer:
-  min_epochs: 100
-  max_epochs: 450
+  min_epochs: 10
+  max_epochs: 200
   gradient_clip_val: 0.5
 
 model:
   # Optimizer
   lr: 0.0002
-  weight_decay: 3.174677841481573e-05
+  weight_decay: 0.0005
 
   # Flags:
   with_res_connections: True
@@ -45,10 +45,11 @@ model:
   generate_pred_csv: False
 
 datamodule:
-  batch_size: 32
+  train_val_test_split: [30000, 4000, 1]  # DO NOT OVERRIDE THIS - As we want the val-set to be the same across experiments.
+  batch_size: 128
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
-    dataset_name: 2021_02_01_neurovascular_datasets
+    dataset_name: 2021_02_01_18_45_51_neurovascular_full_dataset
     window_len_neuro_back: 5
     window_len_neuro_forward: 3

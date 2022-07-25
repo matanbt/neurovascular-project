@@ -258,5 +258,5 @@ class RNNHRFModule(LightningModule):
     def init_weights(m):
         """ Initialize the given layer """
         if isinstance(m, torch.nn.Linear):
-            torch.nn.init.xavier_uniform(m.weight)
+            torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
             m.bias.data.fill_(0.01)

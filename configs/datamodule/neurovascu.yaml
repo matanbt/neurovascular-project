@@ -1,9 +1,6 @@
 _target_: src.datamodules.neurovascu_datamodule.NVDataModule
 
 data_dir: ${data_dir} # data_dir is specified in config.yaml
-datasets_names:
-  - 2021_02_01_neurovascular_datasets
-  # - TODO ...Add more datasets
 batch_size: 64
 train_val_test_split: [2200, 750, 1]  # DO NOT OVERRIDE THIS - As we want the val-set to be the same across experiments.
 num_workers: 0
@@ -15,7 +12,7 @@ pin_memory: False
 #dataset_object:
 #  _target_: src.datamodules.components.nv_datasets.NVDataset_Classic
 #  data_dir: ${data_dir} # data_dir is specified in config.yaml
-#  dataset_name: 2021_02_01_neurovascular_datasets
+#  dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
 #  window_len_neuro_back: 3
 #  window_len_neuro_forward: 2
 #  window_len_vascu_back: 2
@@ -28,7 +25,7 @@ pin_memory: False
 dataset_object:
   _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
   data_dir: ${data_dir}  # data_dir is specified in config.yaml
-  dataset_name: 2021_02_01_neurovascular_datasets
+  dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
   window_len_neuro_back: 5
   window_len_neuro_forward: 2
 
@@ -36,7 +33,7 @@ dataset_object:
 #dataset_object:
 #  _target_: src.datamodules.components.nv_datasets.NVDataset_Tabular
 #  data_dir: ${data_dir}  # data_dir is specified in config.yaml
-#  dataset_name: 2021_02_01_neurovascular_datasets
+#  dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
 #  include_vascular_idx: True
 #  include_vascular_avg: True
 #  include_vascular_distances: True

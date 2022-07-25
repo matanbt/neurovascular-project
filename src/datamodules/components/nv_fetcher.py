@@ -19,7 +19,7 @@ class NVDatasetFetcher:
     """
     def __init__(self,
                  data_dir="data/",
-                 dataset_name="2021_02_01_neurovascular_datasets"):
+                 dataset_name="2021_02_01_18_45_51_neurovascular_partial_dataset"):
         # 1. Define paths to dataset's component
         dataset_path = os.path.join(data_dir, dataset_name)
         neuro_path = os.path.join(dataset_path, "neuronal.zarr")
@@ -33,27 +33,36 @@ class NVDatasetFetcher:
         neuro_coord_df = pd.read_csv(neuro_coordinates_path)
         vascu_coord_df = pd.read_csv(vascu_coordinates_path)
 
-        # 3. Fetch what we want (as numpy arrays)
-        self.time_vector_array = neuro_timeseries.get("time_vector")
-        self.neuro_activity_array = neuro_timeseries.get("neuronal_dff")  # matrix of [neurons X timeunits]
-        self.vascu_activity_array = vascu_timeseries.get("time_varying_vascular_diameter").T  # matrix of [blood X timeunits]
+        # 3. Get names by dataset
+        map_names_by_dataset = {
+            'neuro_activity_name': {
+                '2021_02_01_18_45_51_neurovascular_full_dataset': 'neuronal_dynamics_501',
+                '2021_02_01_19_19_39_neurovascular_full_dataset': 'neuronal_dynamics_466',
+                '2021_02_01_18_45_51_neurovascular_partial_dataset': 'neuronal_dff',
+            }
+        }
+
+        # 4. Fetch what we want (as numpy arrays)
+        self.neuro_activity_array = neuro_timeseries.get(map_names_by_dataset['neuro_activity_name'][dataset_name])  # matrix of [neurons X timestamps]
+        self.vascu_activity_array = vascu_timeseries.get("time_varying_vascular_diameter").T  # matrix of [blood X timestamps]
+        self.time_vector_array = np.arange(self.neuro_activity_array.shape[-1])  # vector of [timestamps]
         self.neuro_coord_array = self._get_coords(neuro_coord_df)
         self.vascu_coord_array = self._get_coords(vascu_coord_df)
-        # TODO: consider extracting more features from the dataset?
 
-        # 4. Ad-hoc datasets fixes
-        if dataset_name == "2021_02_01_neurovascular_datasets":
+        # 5. Ad-hoc datasets fixes
+        if dataset_name in ("2021_02_01_18_45_51_neurovascular_full_dataset", "2021_02_01_19_19_39_neurovascular_full_dataset"):
+            self.neuro_activity_array = self.neuro_activity_array.T
             # This last row appears twice, we shall remove the second appearance
             self.vascu_activity_array = self.vascu_activity_array[:-1, :]
 
-        # 5. Handle missing values
+        # 6. Handle missing values
         self.vascu_activity_array = self.fill_missing_values(self.vascu_activity_array)
 
-        # 6. Validate dimensions
+        # 7. Validate stuff
         self.validate_dims()
         self.validate_no_nans()
 
-        # 7. Deduce metadata
+        # 8. Deduce metadata
         self.metadata = {
             "timeseries_len": self.time_vector_array.shape[0],
             "neurons_count": self.neuro_activity_array.shape[0],
@@ -61,7 +70,7 @@ class NVDatasetFetcher:
             # TODO: enrich if needed
         }
 
-        # 6. Further preprocessing - smoothing
+        # 9. Further preprocessing - smoothing
         # TODO
 
     @staticmethod
@@ -86,8 +95,7 @@ class NVDatasetFetcher:
               each vessels / neuron, but we can actually do it with a smaller window (TODO?) ]
         """
         nan_count = np.argwhere(np.isnan(matrix_to_fix)).shape[0]
-        log.info(f"Filling {nan_count} missing values with all-time average "
-                  "of the element (neuron / vessels).")
+        log.info(f"Filling {nan_count} missing values with all-time average of the element (neuron / vessels).")
 
         # Summing each row as the fill-nan value
         # Ref: https://stackoverflow.com/a/40209161/3476618

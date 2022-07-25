@@ -14,6 +14,7 @@ class LinearRegressionModule(LightningModule):
         lr: float = 0.001,
         weight_decay: float = 0.0005,
         dropout: float = 0.0,
+        **kwargs
     ):
         super().__init__()
 
@@ -63,14 +64,12 @@ class LinearRegressionModule(LightningModule):
     def forward(self, x: torch.Tensor):
         return self.net(x)
 
-
     def step(self, batch: Any):
         x, y = batch
         logits = self.forward(x)
         loss = self.criterion(logits, y)
         preds = logits
         return loss, preds, y
-
 
     def training_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)

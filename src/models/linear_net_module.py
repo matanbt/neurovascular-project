@@ -13,6 +13,7 @@ class LinearNetModule(LightningModule):
         y_size,
         hidden_sizes,
         num_layers,
+        vessels_count,
         lr: float = 0.001,
         weight_decay: float = 0.0005,
         dropout: float = 0.0,
@@ -149,15 +150,18 @@ class LinearNetModule(LightningModule):
             https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
         """
         optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
-        sch = torch.optim.lr_scheduler.StepLR(
-            optimizer, step_size=10, gamma=0.5)
+        sch = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer, gamma=0.99)
+        # sch = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        #     optimizer, T_0=10)
+        # sch = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        #     optimizer, factor=0.1)
         # learning rate scheduler
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": sch,
-                "monitor": "train_loss",
-
+                "monitor": "train/loss",
             }
         }
         # return torch.optim.Adam(

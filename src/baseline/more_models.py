@@ -100,12 +100,18 @@ from xgboost import XGBRegressor, cv, DMatrix
 class NVXGBLinearRegressionModel:
     def __init__(self,
                  dataset: NVDataset_Tabular,
-                 test_size):
+                 test_size,
+                 lr=0.01,
+                 max_depth=6,
+                 n_estimators=1000):
         """ classic linear regression model """
         self.y_pred = None
         self.y_pred_test = None
         self.y_pred_train = None
         self.model = None
+        self.lr = lr
+        self.max_depth = max_depth
+        self.n_estimators = n_estimators
 
         x = dataset.fetcher.get_neurons_df()
         y = dataset.fetcher.get_vessels_df()
@@ -121,13 +127,12 @@ class NVXGBLinearRegressionModel:
         """ train the model on the training set, then predict """
         from sklearn.multioutput import MultiOutputRegressor
         self.model = MultiOutputRegressor(XGBRegressor(objective='reg:squarederror',
-                                                       max_depth=6,
-                                                       learning_rate=0.01,
+                                                       max_depth=self.max_depth,
+                                                       learning_rate=self.lr,
                                                        tree_method="hist",
-                                                       n_estimators=1000,
+                                                       n_estimators=self.n_estimators,
                                                        eval_metric=mean_absolute_error,))
-        # self.model.fit(self.x_train, self.y_train,
-        #                eval_set=[(self.x_train, self.y_train)])
+
         self.model.fit(self.x_train, self.y_train)
 
         self.y_pred = self.model.predict(self.x)
@@ -138,7 +143,10 @@ class NVXGBLinearRegressionModel:
 
     def get_model_hparams(self):
         return {
-            'test_size': self.test_size
+            'test_size': self.test_size,
+            'lr': self.lr,
+            'max_depth': self.max_depth,
+            'n_estimators': self.n_estimators
         }
 
     def evaluate(self):

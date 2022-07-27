@@ -60,3 +60,6 @@ This document will summarise our conclusion up to the first milestones, during w
         - Treat each `X` 2D array with 3 channels - vascular past, neuronal past, neuronal future
   - **Random Forest Regressors**:
     - Try utilizing XGBoost Regressor.
+    - First results:
+    - >> Training: MSE=1.566351885061493, R^2=0.8930500489167255, MAE=0.8586202936795646
+    >> Testing: MSE=13.219455588701825, R^2=-0.14704685411627838, MAE=2.688774040894763

@@ -1,7 +1,0 @@
-_target_: src.baseline.more_models.NVXGBLinearRegressionModel
-
-lr: 0.001
-
-# These are (currently) added dynamically, based on the dataset metadata:
-# x_size: -
-# y_size: -

@@ -1,4 +1,4 @@
-_target_: src.models.baseline.more_models.NVXGBLinearRegressionModel
+_target_: src.baseline.more_models.NVXGBLinearRegressionModel
 
 lr: 0.001
 

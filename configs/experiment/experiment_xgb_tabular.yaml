@@ -4,10 +4,10 @@
 # python train.py experiment=experiment_xgb_tabular.yaml [hparams_search=neurovascu_optuna]
 
 defaults:
-  - override /datamodule: neurovascu.yaml
+  - override /datamodule: neurovascu_tab.yaml
   - override /model: xgbregressor.yaml
   - override /callbacks: default.yaml
-  - override /logger: comet.yaml
+  - override /logger: wandb.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -36,10 +36,10 @@ datamodule:
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_Tabular
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
-    dataset_name: 2021_02_01_neurovascular_datasets
+    dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
     include_vascular_idx: True
-    include_vascular_avg: True
-    include_vascular_distances: True
+    include_vascular_avg: False
+    include_vascular_distances: False
     window_len_neuro_back: 10
     window_len_neuro_forward: 5
-    neuro_aggr_method: 'flatten'
+    #neuro_aggr_method: 'flatten'

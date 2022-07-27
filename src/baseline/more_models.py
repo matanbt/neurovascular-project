@@ -103,6 +103,7 @@ class NVXGBLinearRegressionModel:
                  test_size,
                  x_size,
                  y_size,
+                 vessels_count,
                  lr=0.01,
                  max_depth=6,
                  n_estimators=1000):

@@ -56,6 +56,10 @@ class NVDataModule(LightningDataModule):
         return self.dataset.y_size
 
     @property
+    def vessels_count(self) -> int:
+        return self.dataset.fetcher.metadata["blood_vessels_count"]
+
+    @property
     def extras(self) -> dict:
         """ Data to pass to the model *before* training"""
         return self.dataset.get_extras()

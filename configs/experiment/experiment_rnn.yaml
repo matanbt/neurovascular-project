@@ -7,7 +7,7 @@ defaults:
   - override /datamodule: neurovascu.yaml
   - override /model: rnn.yaml
   - override /callbacks: default.yaml
-  - override /logger: wandb.yaml
+  - override /logger: comet.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -20,28 +20,28 @@ seed: 42
 
 trainer:
   min_epochs: 100
-  max_epochs: 700
+  max_epochs: 500
   gradient_clip_val: 0.5
 
 model:
   # Optimizer
-  lr: 0.0006142260891022587
-  weight_decay: 3.174677841481573e-05
+  lr: 0.0001
+  weight_decay: 0.00003
 
   # Feature Extractor
   rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
   rnn_dropout: 0.3
   rnn_hidden_dim: 500
   rnn_layers_count: 1
-  rnn_bidirectional: True
+  rnn_bidirectional: False
 
 
   # Regressor
   regressor_hidden_layers_list: [] #[500,]
-  regressor_hidden_layers_dropout: 0.4
+  regressor_hidden_layers_dropout: 0.3
 
   # Flags:
-  generate_pred_csv: True
+  generate_pred_csv: False
 
 datamodule:
   batch_size: 32

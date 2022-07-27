@@ -37,18 +37,27 @@ pip install -r requirements.txt
 
 # [OPTIONAL] if using WandB, insert your API key using: 
 wandb login
+
+# [OPTIONAL] if using CometML, insert your API key using:
+export COMET_API_TOKEN={YOUR-API-KEY-FROM-COMET.ML}
 ```
 
-### Train model with chosen experiment configuration from [configs/experiment/](configs/experiment/)
+### Train model
+Train a model, with chosen experiment (= model variation) configuration from [configs/experiment/](configs/experiment/).
 
 ```bash
-python train.py experiment=experiment_name.yaml
+python train.py experiment=experiment_name
 ```
 
 **Main Experiments List:**
 - `experiment_lin_regr_vascu.yaml`: Naive Linear Regression baseline, but including the vascular activity.
 - `experiment_lin_regr.yaml`: Linear Regression baseline, from neuronal activity only.
 - `experiment_ehrf.yaml`: A carefully engineered learnable function from neuronal activity.
+- TODO add here all important experiments.
+
+**Main Datasets List**
+- TODO add here all important datasets
+
 
 ### Override configurations
 You can override any parameter from command line like this. Some useful examples:
@@ -58,7 +67,7 @@ You can override any parameter from command line like this. Some useful examples
 
 ### Run the baseline model (non-Deep model)
 ```bash
-python src/baseline/baseline.py
+python -m src.baseline.baseline
 ```
 
 ## Dirs and Files (with most logic)

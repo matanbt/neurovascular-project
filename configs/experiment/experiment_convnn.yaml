@@ -7,7 +7,7 @@ defaults:
   - override /datamodule: neurovascu.yaml
   - override /model: convnn.yaml
   - override /callbacks: default.yaml
-  - override /logger: wandb.yaml
+  - override /logger: comet.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above
@@ -20,12 +20,12 @@ seed: 42
 
 trainer:
   min_epochs: 100
-  max_epochs: 700
+  max_epochs: 450
   gradient_clip_val: 0.5
 
 model:
   # Optimizer
-  lr: 0.0006142260891022587
+  lr: 0.0002
   weight_decay: 3.174677841481573e-05
   # Feature Extractor
   conv_filters: [4, 4, 4, 16, 16, 16]
@@ -35,11 +35,11 @@ model:
   conv_dropout: 0.3
 
   # Regressor
-  regressor_hidden_layers_list: [500, 500,]
-  regressor_hidden_layers_dropout: 0.5
+  regressor_hidden_layers_list: [500]
+  regressor_hidden_layers_dropout: 0.4
 
   # Flags:
-  generate_pred_csv: True
+  generate_pred_csv: False
 
 datamodule:
   batch_size: 32

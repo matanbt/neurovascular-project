@@ -7,7 +7,7 @@ defaults:
   - override /datamodule: neurovascu.yaml
   - override /model: ehrf.yaml
   - override /callbacks: default.yaml
-  - override /logger: wandb.yaml
+  - override /logger: comet.yaml
   - override /trainer: default.yaml
 
 # all parameters below will be merged with parameters from default configurations set above

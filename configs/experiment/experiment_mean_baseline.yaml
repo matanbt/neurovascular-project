@@ -30,9 +30,11 @@ model:
   with_vascular_mean: True
   with_distances: False
   with_conv_1d: True
+  conv_1d_hidden_layers: 0
+  latent_hidden_dropout: 0
 
   # Flags:
-  generate_pred_csv: True
+  generate_pred_csv: False
 
 datamodule:
   batch_size: 128

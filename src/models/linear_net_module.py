@@ -28,7 +28,8 @@ class LinearNetModule(LightningModule):
         if type(hidden_sizes) == int:
             hidden_sizes = [hidden_sizes] * (num_layers - 1)
         else:
-            assert len(hidden_sizes) == (num_layers - 1)
+            # we allow hidden sizes parameter to override num_layers parameter
+            num_layers = len(hidden_sizes) + 1
 
         self.net = ModuleList()
 

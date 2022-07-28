@@ -95,6 +95,8 @@ class RNNHRFModule(LightningModule):
         self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
         self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
+        self.test_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
+        self.test_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
@@ -221,8 +223,12 @@ class RNNHRFModule(LightningModule):
 
         # log test metrics
         acc = self.test_mse(preds, targets)
+        nrmse = self.test_nrmse(preds, targets)
+        mbkmse = self.test_mbkmse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
         self.log("test/mse", acc, on_step=False, on_epoch=True)
+        self.log("test/nrmse", nrmse, on_step=False, on_epoch=True)
+        self.log("test/mbkmse", mbkmse, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -242,6 +248,8 @@ class RNNHRFModule(LightningModule):
         self.val_nrmse.reset()
         self.train_mbkmse.reset()
         self.val_mbkmse.reset()
+        self.test_nrmse.reset()
+        self.test_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

@@ -20,20 +20,20 @@ seed: 42
 
 trainer:
   min_epochs: 100
-  max_epochs: 1000
+  max_epochs: 5000
   gradient_clip_val: 0.5
 
 model:
-  lr: 0.0001
+  lr: 0.001
   weight_decay: 0.0003
 
   # Neuronal-Conv-1d term
   with_conv_1d: True
-  with_distances: False
-  conv_1d_hidden_layers: 1
+  with_distances: False  # False means "learnable distances"
+  conv_1d_hidden_layers: 20
 
   # Latent residuals term
-  with_latent_fcnn: True
+  with_latent_fcnn: False
   latent_hidden_layers: 3
   latent_hidden_layer_dim: 500
   latent_hidden_dropout: 0.35

@@ -15,15 +15,17 @@ class EHRFModule(LightningModule):
         self,
         x_size,
         y_size,
-        latent_dim: int = 1,
 
         # Model's Hyper-parameters:
-        hidden_layers: int = 2,            # Hidden layers of the latent transform
-        hidden_layer_dim: int = 100,       # Dims of ^
-        hidden_dropout: float = 0,         # Dropout layer to the latent transform
+        conv_1d_hidden_layers: int = 1,    # Hidden layers of the conv-1d of the neurons
+        latent_hidden_layers: int = 2,            # Hidden layers of the latent transform
+        latent_hidden_layer_dim: int = 100,       # Dims of ^
+        latent_hidden_dropout: float = 0,         # Dropout layer to the latent transform
+
         with_vascular_mean: bool = False,  # Whether to insert vascular mean before prediction (should help)
-        with_1st_latent_dim: bool = True,
-        with_distances: bool = True,       # Whether to include distances in our formula
+        with_conv_1d: bool = True,
+        with_latent_fcnn: bool = False,
+        with_distances: bool = True,       # Whether to include distances in our formula, False means Distances will be learnable matrix
 
         # Average Baseline config
         predict_with_mean_vascular_only: bool = False,  # Naive model predicts the mean activity
@@ -41,38 +43,49 @@ class EHRFModule(LightningModule):
 
         # More data:
         self.x_size, self.y_size = x_size, y_size
+        self.flatten_x_size = x_size[0] * x_size[1]
         self.neuron_count, self.neuro_window_size, self.vessels_count = x_size[0], x_size[1], y_size
-        self.latent_dim = latent_dim
+        self.with_conv_1d = with_conv_1d
         self.with_vascular_mean = with_vascular_mean
-        self.with_1st_latent_dim = with_1st_latent_dim
+        self.with_latent_fcnn = with_latent_fcnn
         self.distances = None  # will be added later
         self.mean_vascular_activity = None  # will be added later
 
-        # Build the NN transformation to latent space
-        to_latent_space_layers = [
-            nn.Linear(self.neuron_count * self.neuro_window_size,
-                      hidden_layer_dim if hidden_layers > 0 else (self.neuron_count * self.latent_dim)),
-        ]
-        for i in range(hidden_layers):
-            to_latent_space_layers.append(nn.ReLU())
-            if i == hidden_layers - 1:
-                to_latent_space_layers.append(nn.Dropout(p=hidden_dropout))
-                to_latent_space_layers.append(nn.Linear(hidden_layer_dim, self.neuron_count * self.latent_dim))
-            else:
-                to_latent_space_layers.append(nn.Linear(hidden_layer_dim, hidden_layer_dim))
-        self.to_latent_space = nn.Sequential(*to_latent_space_layers)
-        self.to_latent_space.double()  # our data is passed in float64 (i.e. double)
-        self.to_latent_space.apply(self.init_weights)
+        # -----------------------------------
+        neuronal_conv_1d_layers = []
+        curr_in_channel = self.x_size[-1]  # window size
+        for i in range(conv_1d_hidden_layers + 1):
+            neuronal_conv_1d_layers.append(nn.Conv1d(in_channels=curr_in_channel,
+                                                     out_channels=1, kernel_size=1))
+            curr_in_channel = 1
+            if i != conv_1d_hidden_layers:  # add non-linearity to inner layers
+                neuronal_conv_1d_layers.append(nn.BatchNorm1d(num_features=1))
+                neuronal_conv_1d_layers.append(nn.ReLU())
 
-        # Build the latent space to vascular activity transformation
-        self.to_vascular = nn.Sequential(
-            nn.ReLU(),
-            nn.Linear(self.neuron_count * (self.latent_dim - 1), self.y_size),
-            nn.ReLU(),
-            nn.Linear(self.y_size, self.y_size),
-        )
-        self.to_vascular.double()  # our data is passed in float64 (i.e. double)
-        self.to_vascular.apply(self.init_weights)
+        self.neuronal_conv_1d_layers = nn.Sequential(*neuronal_conv_1d_layers)
+        self.neuronal_conv_1d_layers.double()  # our data is passed in float64 (i.e. double)
+        self.neuronal_conv_1d_layers.apply(self.init_weights)
+
+        # Replace distances if needed
+        self.learnable_distances_fcnn = nn.Linear(self.neuron_count, self.y_size)
+
+        # Build the latent variables to vascular activity transformation
+        latent_fcnn_layers = [nn.Flatten()]
+        curr_layer_dim = self.flatten_x_size
+
+        for i in range(latent_hidden_layers - 1):
+            latent_fcnn_layers.append(nn.Linear(curr_layer_dim, latent_hidden_layer_dim))
+            curr_layer_dim = latent_hidden_layer_dim
+            latent_fcnn_layers.append(nn.Dropout(p=latent_hidden_dropout))
+            latent_fcnn_layers.append(nn.ReLU())
+        latent_fcnn_layers.append(nn.Linear(curr_layer_dim, self.y_size))
+
+        if self.with_latent_fcnn:
+            self.latent_fcnn = nn.Sequential(*latent_fcnn_layers)
+            self.latent_fcnn.double()  # our data is passed in float64 (i.e. double)
+            self.latent_fcnn.apply(self.init_weights)
+
+        # -----------------------------------
 
         # loss function
         self.criterion = torch.nn.MSELoss()
@@ -85,8 +98,10 @@ class EHRFModule(LightningModule):
         # "handmade" metrics:
         self.train_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
+        self.test_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
         self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
+        self.test_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
@@ -129,25 +144,30 @@ class EHRFModule(LightningModule):
         self.distances = self.distances.to(device=self.device)
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
 
-        flattened_x = torch.flatten(batch_x, start_dim=1)
-        latent_space = self.to_latent_space(flattened_x)
+        # Calculate the neurons after convolution
+        if self.with_conv_1d:
+            batch_x_for_conv = torch.transpose(batch_x, 1, 2)
+            neuronal_convoluted = self.neuronal_conv_1d_layers(batch_x_for_conv)
+            neuronal_convoluted = neuronal_convoluted.squeeze(dim=1)
 
-        # From latent to vascular activity
-        latent_space = latent_space.view(batch_x.shape[0], batch_x.shape[1], self.latent_dim)
-        if self.latent_dim > 1:
-            # 1. Predict based on the last latent dims
-            vascu_pred = self.to_vascular(latent_space[:, :, 1:].flatten(start_dim=1))
-        # 2. Predict based on the first latent dim, with special function
+        # Calculate latent residuals for the vascular activity
+        if self.with_latent_fcnn:
+            latent_residuals = self.latent_fcnn(batch_x)
+            vascu_pred += latent_residuals
+
+        # 2. Predict based on the convoluted neuronal, with special function
         for i in range(batch_x.shape[0]):
             if self.with_vascular_mean:
                 # adding vascular activity mean as a bias
                 vascu_pred[i] += self.mean_vascular_activity
             #  each neuron is weighted by distance from blood vessel
-            if self.with_1st_latent_dim and not self.hparams.predict_with_mean_vascular_only:
-                vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1)
+            if self.with_conv_1d and not self.hparams.predict_with_mean_vascular_only:
+                vascu_pred[i] += (torch.exp(-self.distances) * neuronal_convoluted[i, :]).sum(dim=1)
+            elif not self.hparams.with_distances and self.with_conv_1d and not self.hparams.predict_with_mean_vascular_only: # linear layer to vascular
+                vascu_pred[i] += self.learnable_distances_fcnn(neuronal_convoluted[i, :])
             elif self.hparams.predict_with_mean_vascular_only:
                 # HACK for predicting mean only for naive model configuration
-                vascu_pred[i] += (torch.exp(-self.distances) * latent_space[i, :, 0]).sum(dim=1) * 0
+                vascu_pred[i] += (torch.exp(-self.distances) * neuronal_convoluted[i, :]).sum(dim=1) * 0
 
         return vascu_pred
 
@@ -208,9 +228,13 @@ class EHRFModule(LightningModule):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
-        acc = self.test_mse(preds, targets)
+        mse = self.test_mse(preds, targets)
+        nrmse = self.test_nrmse(preds, targets)
+        mbkmse = self.test_mbkmse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/mse", acc, on_step=False, on_epoch=True)
+        self.log("test/mse", mse, on_step=False, on_epoch=True)
+        self.log("test/nrmse", nrmse, on_step=False, on_epoch=True)
+        self.log("test/mbkmse", mbkmse, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -228,8 +252,10 @@ class EHRFModule(LightningModule):
         self.val_mse.reset()
         self.train_nrmse.reset()
         self.val_nrmse.reset()
+        self.test_nrmse.reset()
         self.train_mbkmse.reset()
         self.val_mbkmse.reset()
+        self.test_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.
@@ -246,5 +272,5 @@ class EHRFModule(LightningModule):
     def init_weights(m):
         """ Initialize the given layer """
         if isinstance(m, torch.nn.Linear):
-            torch.nn.init.xavier_uniform(m.weight)
+            torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
             m.bias.data.fill_(0.01)

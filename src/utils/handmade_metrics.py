@@ -52,29 +52,37 @@ class MeanSquaredErrorPerVessel(Metric):
         """ returns the mean vascular activity per blood-vessel"""
         return self.sum_target_per_vessel / self.total
 
+    def get_nrmse_per_vessel(self):
+        rmse_per_vessel = self.get_current_mse_per_vessel().sqrt()
+        # normalize RMSE with mean vascular activity
+        nrmse_per_vessel = rmse_per_vessel / self.get_current_mean_vascular_per_vessel()
+
+        return nrmse_per_vessel
+
     def compute(self) -> Tensor:
         raise NotImplementedError("MeanSquaredErrorPerVessel must be inherited, and override `compute()` method")
 
 
 class MeanBestKMSE(MeanSquaredErrorPerVessel):
     """
-        Calculates the mean of the Top-K best MSEs of blood vessels
+        Calculates the mean of the Top-K best NRMSEs of blood vessels
         This should detect a model that is specifically good on a subset of vessels
     """
 
     def __init__(self, k: int = 50, **kwargs):
         """
             Args:
-                k: defines the amount of top MSE to take
+                k: defines the amount of top NRMSE to take
         """
         super().__init__(**kwargs)
         self.k = k
 
     def compute(self) -> Tensor:
-        mse_per_vessel = self.get_current_mse_per_vessel()
-        sorted_idx = mse_per_vessel.argsort()
-        # Extract the K-best MSEs and take a mean
-        mean_best_mses = mse_per_vessel[sorted_idx[:self.k]].mean()
+        # mse_per_vessel = self.get_current_mse_per_vessel()  # commented out as we currently calculate with the NRMSE
+        nrmse_per_vessel = self.get_nrmse_per_vessel()
+        sorted_idx = nrmse_per_vessel.argsort()
+        # Extract the K-best NRMSEs and take a mean
+        mean_best_mses = nrmse_per_vessel[sorted_idx[:self.k]].mean()
 
         return mean_best_mses
 
@@ -95,9 +103,7 @@ class NormalizedRootMeanSquaredError(MeanSquaredErrorPerVessel):
         self.k = k
 
     def compute(self) -> Tensor:
-        rmse_per_vessel = self.get_current_mse_per_vessel().sqrt()
-        # normalize RMSE with mean vascular activity
-        nrmse_per_vessel = rmse_per_vessel / self.get_current_mean_vascular_per_vessel()
+        nrmse_per_vessel = self.get_nrmse_per_vessel()
 
         # we return the mean of the NRMSE
         return nrmse_per_vessel.mean()

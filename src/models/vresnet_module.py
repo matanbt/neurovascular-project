@@ -6,7 +6,8 @@ from pytorch_lightning import LightningModule
 from torchmetrics import MinMetric
 from torchmetrics import MeanSquaredError, MeanAbsoluteError
 from src.utils.handmade_metrics import MeanBestKMSE, NormalizedRootMeanSquaredError
-
+from src.models.components.fully_connected_net import FullyConnectedNet
+from src.models.components.res_connection import ResConnection
 import plotly.express as px
 
 from src import utils
@@ -14,22 +15,24 @@ from src import utils
 log = utils.get_logger(__name__)
 
 
-class RNNHRFModule(LightningModule):
+class VResNetModule(LightningModule):
     def __init__(
         self,
         x_size,
         y_size,
+        vessels_count,
 
-        # LSTM Model's Hyper-parameters:
-        rnn_model_type: str = 'LSTM',
-        rnn_dropout: float = 0.3,  # dropout between RNN layers
-        rnn_hidden_dim: int = 500,
-        rnn_layers_count: int = 1,
-        rnn_bidirectional: bool = False,
+        # Model's Hyper-parameters:
+        with_res_connections: bool = True,
+        with_vascular_mean: bool = False,  # whether to insert the vascular mean to the residuals sum
+        with_batchnorm: bool = True,
+        with_droupout: float = 0,
 
-        # Regressor Model's Hyper-parameters:
-        regressor_hidden_layers_list: list = (500, ),  # dims for the hidden FC layers of regressor
-        regressor_hidden_layers_dropout: float = 0.4,
+        start_hidden_layers_count: int = 0,  # count of the first hidden layers
+        end_hidden_layers_count: int = 0,  # count of the last hidden layers
+
+        res_block_layers_count: int = 3,
+        res_blocks_count: int = 5,  # how many res-blocks?
 
         lr: float = 0.001,
         weight_decay: float = 0.0005,
@@ -44,43 +47,44 @@ class RNNHRFModule(LightningModule):
 
         # More data:
         self.x_size, self.y_size = x_size, y_size
-        self.neuron_count, self.neuro_window_size, self.vessels_count = x_size[0], x_size[1], y_size
+        self.flatten_x_size = x_size[0] * x_size[1]
+        self.vessels_count = vessels_count
         self.distances = None  # will be added later
         self.mean_vascular_activity = None  # will be added later
+        start_hidden_layers_count = int(start_hidden_layers_count)
+        res_block_layers_count = int(res_block_layers_count)
+        end_hidden_layers_count = int(end_hidden_layers_count)
 
-        RNN_Model = self._get_rnn_model(rnn_model_type)
+        # Build the first section (from neuronal-dim to vascular-dim):
+        self.start_section = nn.Sequential(nn.Flatten(start_dim=1),
+                                           FullyConnectedNet(self.flatten_x_size, self.y_size,
+                                                             hidden_layers_count=start_hidden_layers_count,
+                                                             hidden_layers_unified_dim=self.y_size,
+                                                             with_batch_norm_hidden=with_batchnorm))
 
-        # Build RNN as feature extractor (alternative)
-        rnn_layers = [
-            RNN_Model(input_size=self.neuron_count,
-                      hidden_size=rnn_hidden_dim,
-                      num_layers=rnn_layers_count,
-                      dropout=rnn_dropout,
-                      bidirectional=rnn_bidirectional,
-                      batch_first=True)
-            ]
-        self.feature_extractor = nn.Sequential(*rnn_layers)
+        # Build the residuals chain
+        res_blocks_list = []
+        for _ in range(res_blocks_count):
+            block = FullyConnectedNet(y_size, y_size,
+                                      hidden_layers_count=res_block_layers_count,
+                                      hidden_layers_unified_dim=y_size,
+                                      with_batch_norm_hidden=with_batchnorm,
+                                      with_dropout_hidden=with_droupout)
+            if with_res_connections:
+                block = ResConnection(block)
+            res_blocks_list.append(block)
+        self.res_blocks_section = nn.Sequential(*res_blocks_list)
 
-        # Build the regressor:
-        fc_layers = []
-        for hidden_dim in regressor_hidden_layers_list:
-            fc_layers.extend([
-                nn.LazyLinear(hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(p=regressor_hidden_layers_dropout)
-            ])
-        fc_layers.append(  # append with last layer
-            nn.LazyLinear(self.y_size)
-        )
-        self.regressor = nn.Sequential(*fc_layers)
+        # Build the ending section
+        self.end_section = FullyConnectedNet(self.y_size, self.y_size,
+                                             hidden_layers_count=end_hidden_layers_count,
+                                             hidden_layers_unified_dim=self.y_size,
+                                             with_batch_norm_hidden=with_batchnorm)
 
-        # Init weights
-        self.feature_extractor.double()  # our data is passed in float64 (i.e. double)
-        self.feature_extractor.apply(self.init_weights)
-        log.info(self.feature_extractor)
-
-        self.regressor.double()  # our data is passed in float64 (i.e. double)
-        # Initializing the regressor weight is done after the mock forward pass...
+        # our data is passed in float64 (i.e. double)
+        self.start_section.double()
+        self.res_blocks_section.double()
+        self.end_section.double()
 
         # loss function
         self.criterion = torch.nn.MSELoss()
@@ -95,8 +99,6 @@ class RNNHRFModule(LightningModule):
         self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
         self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
-        self.test_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
-        self.test_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
@@ -125,44 +127,18 @@ class RNNHRFModule(LightningModule):
         self.mean_vascular_activity = torch.Tensor(extras['mean_vascular_activity'])
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device).double()
 
-    def mock_forward_pass(self):
-        """ Runs a mock forward pass, in order to initialize dimensions (we also initialize what we need afterwards)"""
-        with torch.no_grad():
-            self.forward(torch.rand(1, *self.x_size))
-
-        # Stuff we can do only after the first forward pass:
-        self.regressor.apply(self.init_weights)
-        log.info(self.regressor)
-
-    def _get_rnn_model(self, rnn_model_type: str ) -> torch.nn.Module:
-        """ Map user-string to RNN module """
-        # List of possible rnn models:
-        rnn_models = {
-            'LSTM': nn.LSTM,
-            'GRU': nn.GRU
-        }
-        possible_rnn_models = list(rnn_models.keys())
-        assert rnn_model_type in possible_rnn_models, \
-            f'Expected RNN model to be from {possible_rnn_models} but got {rnn_model_type}'
-        return rnn_models[rnn_model_type]
-
     def forward(self, batch_x: torch.Tensor):
-        if self.distances is not None:
-            self.distances = self.distances.to(device=self.device)
-        if self.mean_vascular_activity is not None:
-            self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
-
         if isinstance(batch_x, list):
             # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
             batch_x = batch_x[0]
 
-        batch_x = batch_x.double()
-        batch_x = torch.transpose(batch_x, -2, -1)  # the recurrence is on each timestamp
-        features_vector, _ = self.feature_extractor(batch_x)
-        features_vector = features_vector[:, -1, :]  # get last hidden state
-        vascu_pred = self.regressor(features_vector)
+        out = self.start_section(batch_x)
+        if self.hparams.with_vascular_mean:
+            out = out + self.mean_vascular_activity
+        out = self.res_blocks_section(out)
+        out = self.end_section(out)
 
-        return vascu_pred
+        return out
 
     def step(self, batch: Any):
         x, y = batch
@@ -217,18 +193,13 @@ class RNNHRFModule(LightningModule):
         self.val_mbkmse_best.update(self.val_mbkmse.compute())
         self.log("val/mbkmse_best", self.val_mbkmse_best.compute(), on_epoch=True, prog_bar=True)
 
-
     def test_step(self, batch: Any, batch_idx: int):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
         acc = self.test_mse(preds, targets)
-        nrmse = self.test_nrmse(preds, targets)
-        mbkmse = self.test_mbkmse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
         self.log("test/mse", acc, on_step=False, on_epoch=True)
-        self.log("test/nrmse", nrmse, on_step=False, on_epoch=True)
-        self.log("test/mbkmse", mbkmse, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -248,8 +219,6 @@ class RNNHRFModule(LightningModule):
         self.val_nrmse.reset()
         self.train_mbkmse.reset()
         self.val_mbkmse.reset()
-        self.test_nrmse.reset()
-        self.test_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

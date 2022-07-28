@@ -5,7 +5,7 @@
 
 defaults:
   - override /datamodule: neurovascu.yaml
-  - override /model: convnn.yaml
+  - override /model: vresnet.yaml
   - override /callbacks: default.yaml
   - override /logger: comet.yaml
   - override /trainer: default.yaml
@@ -14,39 +14,41 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "fcnn_v1"
+name: "vresnet_v1"
 
 seed: 42
 
 trainer:
-  min_epochs: 100
-  max_epochs: 400
+  min_epochs: 10
+  max_epochs: 200
   gradient_clip_val: 0.5
 
 model:
   # Optimizer
-  lr: 0.0001
-  weight_decay: 0.00003
+  lr: 0.0002
+  weight_decay: 0.0005
 
-  # Feature Extractor (We shut this part down, as we want the FC part only)
-  conv_filters: [] # Must be empty, so the ConvNN layer would be empty
-  conv_kernel_size: 0
-  conv_pool_every: 0
-  conv_with_batchnorm: 0
-  conv_dropout: 0
+  # Flags:
+  with_res_connections: True
+  with_vascular_mean: False  # whether to insert the vascular mean to the residuals sum
+  with_batchnorm: True
+  with_droupout: 0
 
-  # Regressor (Fully-Connected-NN)
-  regressor_hidden_layers_list: [500, 500,]
-  regressor_hidden_layers_dropout: 0.4
+  # Model's Hyper-parameters:
+  start_hidden_layers_count: 0  # count of the first hidden layers
+  end_hidden_layers_count: 0  # count of the last hidden layers
+  res_block_layers_count: 5
+  res_blocks_count: 3  # how many res-blocks?
+
 
   # Flags:
   generate_pred_csv: False
 
 datamodule:
-  batch_size: 32
+  batch_size: 128
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
-    dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
+    dataset_name: 2021_02_01_18_45_51_neurovascular_full_dataset
     window_len_neuro_back: 5
     window_len_neuro_forward: 3

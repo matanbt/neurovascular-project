@@ -18,3 +18,4 @@ regressor_hidden_layers_dropout: 0.4
 # These are (currently) added dynamically, based on the dataset metadata:
 # x_size: -
 # y_size: -
+# vessel_count: -

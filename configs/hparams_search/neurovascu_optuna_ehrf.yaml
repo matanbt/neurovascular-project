@@ -68,16 +68,13 @@ hydra:
       model.hidden_layer_dim:
         type: categorical
         choices: [50, 100, 200]
-      model.hidden_dropout:
-        type: float
-        low: 0
-        high: 0.7
-      model.with_vascular_mean:
-        type: categorical
-        choices: [True, False]
-#      model.with_1st_latent_dim:
+#      model.hidden_dropout:
+#        type: float
+#        low: 0
+#        high: 0.7
+#      model.with_vascular_mean:
 #        type: categorical
-#        choices: [ True, False ]
+#        choices: [True, False]
       model.with_distances:
         type: categorical
         choices: [ True, False ]

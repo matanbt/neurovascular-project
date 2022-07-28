@@ -23,7 +23,7 @@ class NVDataset_Base(Dataset):
     """
     def __init__(self,
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
                  scaling_method=None, destroy_data=False, **kwargs):
         self.dataset_name = dataset_name
         self.fetcher = NVDatasetFetcher(data_dir=data_dir, dataset_name=dataset_name)
@@ -100,6 +100,9 @@ class NVDataset_Base(Dataset):
             return
         if self.scaling_method == 'neuro_mean_removal':
             self.neuro_activity_array -= np.expand_dims(self.neuro_activity_array.mean(axis=1), axis=1)
+        if self.scaling_method == 'neuro_normalize':  # this option is a HIGHLY RECOMMENDED in new datasets
+            self.neuro_activity_array -= np.expand_dims(self.neuro_activity_array.mean(axis=1), axis=1)
+            self.neuro_activity_array /= np.expand_dims(self.neuro_activity_array.std(axis=1), axis=1)
 
 
 class NVDataset_Classic(NVDataset_Base):
@@ -112,14 +115,14 @@ class NVDataset_Classic(NVDataset_Base):
     def __init__(self,
                  # Dataset source:
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
 
                  # Dataset hyper parameters:
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 5,
                  window_len_vascu_back: int = 5,
                  window_len_y: int = 1,
-                 scale_method: str = None,
+                 scaling_method: str = None,
                  aggregate_window="flatten",
                  poly_degree: int = None,
                  destroy_data: bool = False
@@ -132,13 +135,13 @@ class NVDataset_Classic(NVDataset_Base):
             window_len_neuro_forward: length of the neuronal window of the 'future' (`0` means no neuro-forward-window).
             window_len_vascu_back: length of the vascular window of the 'past' (`0` means no vascular-window).
             window_len_y: length of the vascular window to *predict* (regularly we assign `1`)
-            scale_method: default to `None` i.e. no scaling.  # TODO (? normalizing (with sliding window) the data)
+            scaling_method: default to `None` i.e. no scaling.
             aggregate_window: method to aggregate each window (by default we simply flatten the window)  # TODO (# TODO add 'mean', 'sum', etc)
             poly_degree: adding polynomial features, defaults to `None` i.e. not adding these (WARNING: This yields high RAM consumption)
             destroy_data: shuffles the data to make it "bad" (for control experiments)
         """
         super().__init__(data_dir=data_dir, dataset_name=dataset_name,
-                         destroy_data=destroy_data)
+                         destroy_data=destroy_data, scaling_method=scaling_method)
 
         # back and forward window size
         self.window_len_neuro_back = window_len_neuro_back
@@ -222,11 +225,6 @@ class NVDataset_Classic(NVDataset_Base):
             f"Expected aggregate_window arg ({self.aggregate_window}) to " \
             f"be in {aggregate_window_methods}"
 
-        scale_methods = [None, ]  # + 'normalize' 'normalize_sliding_window' ...
-        assert self.aggregate_window in aggregate_window_methods, \
-            f"Expected scale_method arg ({self.aggregate_window}) to " \
-            f"be in {scale_methods}"
-
     def get_data_hparams(self):
         """ returns the hyper parameters that defines this dataset instance """
         return {
@@ -261,12 +259,12 @@ class NVDataset_EHRF(NVDataset_Base):
     def __init__(self,
                  # Dataset source:
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
 
                  # Dataset hyper parameters:
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 2,
-                 scaling_method: str = None,
+                 scaling_method: str = None,  # maybe scaling with Sigmoid will help?
                  destroy_data: bool = False
                  ):
         """
@@ -337,7 +335,7 @@ class NVDataset_EHRF(NVDataset_Base):
         """
         assert self.window_len_neuro_back > 0, \
             "Expected positive back-window length for neuronal activity"
-        assert self.scaling_method in [None, "neuro_mean_removal"]
+        assert self.scaling_method in [None, "neuro_mean_removal", "neuro_normalize"]
 
     def get_data_hparams(self):
         """ returns the hyper parameters that defines this dataset instance """
@@ -365,7 +363,7 @@ class NVDataset_Tabular(NVDataset_Base):
     def __init__(self,
                  # Dataset source:
                  data_dir: str = "data/",
-                 dataset_name: str = "2021_02_01_neurovascular_datasets",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
 
                  # Dataset hyper parameters (Tabular Features):
                  include_vascular_idx: bool = True,

@@ -19,27 +19,28 @@ name: "mean_baseline_v1"
 seed: 42
 
 trainer:
-  min_epochs: 5
-  max_epochs: 5
+  min_epochs: 1
+  max_epochs: 1
   gradient_clip_val: 0.5
 
 model:
   predict_with_mean_vascular_only: True
-  latent_dim: 1
-  hidden_layers: 0
-  hidden_layer_dim: 0
-  hidden_dropout: 0
+  with_latent_fcnn: False
+  latent_hidden_layers: 0
   with_vascular_mean: True
-  with_1st_latent_dim: True
+  with_distances: False
+  with_conv_1d: True
+  conv_1d_hidden_layers: 0
+  latent_hidden_dropout: 0
 
   # Flags:
-  generate_pred_csv: True
+  generate_pred_csv: False
 
 datamodule:
-  batch_size: 64
+  batch_size: 128
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
-    dataset_name: 2021_02_01_neurovascular_datasets
-    window_len_neuro_back: 5
-    window_len_neuro_forward: 2
+    dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
+    window_len_neuro_back: 1
+    window_len_neuro_forward: 0

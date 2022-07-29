@@ -107,7 +107,7 @@ def rnn_grid():
               f"model.rnn_layers_count={rnn_layers_count} " \
               f"model.rnn_dropout=0.3 model.rnn_hidden_dim=500 " \
               f"model.regressor_hidden_layers_list={regressor_hidden_layers_list} " \
-              f"model.regressor_hidden_layers_dropout=0.3" \
+              f"model.regressor_hidden_layers_dropout=0.3 " \
               f"name={name}"
         print(f"cmd: {cmd}")
         res = subprocess.run(cmd, shell=True)

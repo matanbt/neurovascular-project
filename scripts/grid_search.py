@@ -97,7 +97,7 @@ def rnn_grid():
         print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list)
         cmd = f"python train.py -m experiment=experiment_rnn " \
               f"trainer.gpus=1 logger=wandb trainer.min_epochs=30 trainer.max_epochs=200 " \
-              f"model.lr=0.00006 "
+              f"model.lr=0.00006 " \
               f"datamodule.dataset_object.dataset_name={dataset} " \
               f"datamodule.batch_size=128 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back} " \
@@ -107,7 +107,7 @@ def rnn_grid():
               f"model.rnn_layers_count={rnn_layers_count} " \
               f"model.rnn_dropout=0.3 model.rnn_hidden_dim=500 " \
               f"model.regressor_hidden_layers_list={regressor_hidden_layers_list} " \
-              f"model.regressor_hidden_layers_dropout=0.3"
+              f"model.regressor_hidden_layers_dropout=0.3" \
               f"name={name}"
         print(f"cmd: {cmd}")
         res = subprocess.run(cmd, shell=True)

@@ -20,7 +20,8 @@ class LinearNetModule(LightningModule):
             dropout: float = 0.0,
     ):
         super().__init__()
-
+        self.vessels_count = vessels_count
+        
         # this line allows accessing init params with 'self.hparams' attribute
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)

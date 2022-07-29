@@ -90,12 +90,14 @@ def rnn_grid():
     rnn_model_types = ['LSTM', 'GRU']
     rnn_bis = [True, False]
     rnn_layers_counts = [1, 3]
-    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, rnn_model_types, rnn_bis, rnn_layers_counts)
+    regressor_hidden_layers_lists = ["[]", "[500]"]
+    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, rnn_model_types, rnn_bis, rnn_layers_counts, regressor_hidden_layers_lists)
 
-    for dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count in all_combinations:
-        print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count)
+    for dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list in all_combinations:
+        print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list)
         cmd = f"python train.py -m experiment=experiment_rnn " \
-              f"trainer.gpus=1 logger=wandb trainer.min_epochs=40 trainer.max_epochs=200 " \
+              f"trainer.gpus=1 logger=wandb trainer.min_epochs=30 trainer.max_epochs=200 " \
+              f"model.lr=0.00006 "
               f"datamodule.dataset_object.dataset_name={dataset} " \
               f"datamodule.batch_size=128 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back} " \
@@ -103,7 +105,9 @@ def rnn_grid():
               f"model.rnn_model_type={rnn_model_type} " \
               f"model.rnn_bidirectional={rnn_bidirectional} " \
               f"model.rnn_layers_count={rnn_layers_count} " \
-              f"model.rnn_dropout=0.25 model.rnn_hidden_dim=500 " \
+              f"model.rnn_dropout=0.3 model.rnn_hidden_dim=500 " \
+              f"model.regressor_hidden_layers_list={regressor_hidden_layers_list} " \
+              f"model.regressor_hidden_layers_dropout=0.3"
               f"name={name}"
         print(f"cmd: {cmd}")
         res = subprocess.run(cmd, shell=True)

@@ -1,0 +1,45 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=lin_regr.yaml [hparams_search=neurovascu_optuna]
+
+defaults:
+  - override /datamodule: neurovascu.yaml
+  - override /model: linear_net.yaml
+  - override /callbacks: default.yaml
+  - override /logger: comet.yaml #wandb.yaml
+  - override /trainer: default.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+name: "linear_net_v2"
+
+seed: 42
+
+trainer:
+  min_epochs: 200
+  max_epochs: 500
+  gradient_clip_val: 0.5
+
+model:
+  lr: 0.000819
+  weight_decay: 16e-06
+  dropout: 0.52
+  hidden_sizes: [800, 400, 200, 100, 200, 400, 800]
+  num_layers: 8
+  #   For windows (2, 1, 0)
+
+datamodule:
+  batch_size: 64
+  dataset_object:
+    _target_: src.datamodules.components.nv_datasets.NVDataset_Classic
+    data_dir: ${data_dir} # data_dir is specified in config.yaml
+    dataset_name: 2021_02_01_neurovascular_datasets
+    window_len_neuro_back: 2
+    window_len_neuro_forward: 1
+    window_len_vascu_back: 0
+    window_len_y: 1
+    poly_degree:
+    aggregate_window: "flatten"

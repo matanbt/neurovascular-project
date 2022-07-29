@@ -43,4 +43,3 @@ datamodule:
     window_len_y: 1
     poly_degree:
     aggregate_window: "flatten"
-    scale_method:

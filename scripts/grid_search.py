@@ -60,7 +60,7 @@ def ehrf_arch_grid():
               f"trainer.gpus=1 logger=wandb trainer.min_epochs=40 trainer.max_epochs=100 " \
               f"model.lr=0.000075 " \
               f"datamodule.dataset_object.dataset_name={dataset} " \
-              f"datamodule.batch_size=128" \
+              f"datamodule.batch_size=128 " \
               f"datamodule.dataset_object.window_len_neuro_back=50 " \
               f"datamodule.dataset_object.window_len_neuro_forward=50 " \
               f"model.with_vascular_mean={with_vascular_mean} " \

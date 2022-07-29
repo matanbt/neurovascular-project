@@ -16,14 +16,13 @@ def tune_hyperparameters(save_to_csv=True) -> pd.DataFrame:
     experiments_table = []
 
     # Possible window lengths
-    ds_names = ["2021_02_01_18_45_51_neurovascular_partial_dataset",
-                "2021_02_01_18_45_51_neurovascular_full_dataset",
+    ds_names = ["2021_02_01_18_45_51_neurovascular_full_dataset",
                 "2021_02_01_19_19_39_neurovascular_full_dataset"]
 
-    window_sizes = [1, 2, 5, 7, 10, 13, 15, 20, 30, 50, 70]
-    lrs = [0.01, 0.001, 0.0001]
-    estimator_nums = [500, 1000, 1500, 2000]
-    max_depths = [5, 10, 15]
+    window_sizes = [1, 10, 50]
+    lrs = [0.001, 0.0001, 0.00001]
+    estimator_nums = [500, 1000, 2000]
+    max_depths = [5, 10]
 
     all_combinations = itertools.product(ds_names, window_sizes, window_sizes, lrs, estimator_nums, max_depths)
     # Iterate on all possible window lengths and evaluate
@@ -49,10 +48,10 @@ def tune_hyperparameters(save_to_csv=True) -> pd.DataFrame:
         experiments_table[-1].update(model.get_model_hparams())
         experiments_table[-1].update(model_results)
 
-    experiments_df = pd.DataFrame(experiments_table)
+        experiments_df = pd.DataFrame(experiments_table)
 
-    if save_to_csv:
-        experiments_df.to_csv("xgbregressor_hparams_tuning.csv")
+        if save_to_csv:
+            experiments_df.to_csv("xgbregressor_hparams_tuning.csv")
 
     return experiments_df
 

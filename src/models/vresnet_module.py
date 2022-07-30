@@ -31,7 +31,7 @@ class VResNetModule(LightningModule):
         start_hidden_layers_count: int = 0,  # count of the first hidden layers
         end_hidden_layers_count: int = 0,  # count of the last hidden layers
 
-        res_block_layers_count: int = 3,
+        res_block_layers_count: int = 2,
         res_blocks_count: int = 5,  # how many res-blocks?
 
         lr: float = 0.001,
@@ -76,10 +76,13 @@ class VResNetModule(LightningModule):
         self.res_blocks_section = nn.Sequential(*res_blocks_list)
 
         # Build the ending section
-        self.end_section = FullyConnectedNet(self.y_size, self.y_size,
-                                             hidden_layers_count=end_hidden_layers_count,
-                                             hidden_layers_unified_dim=self.y_size,
-                                             with_batch_norm_hidden=with_batchnorm)
+        if end_hidden_layers_count < 0:
+            self.end_section = nn.Identity()
+        else:
+            self.end_section = FullyConnectedNet(self.y_size, self.y_size,
+                                                 hidden_layers_count=end_hidden_layers_count,
+                                                 hidden_layers_unified_dim=self.y_size,
+                                                 with_batch_norm_hidden=with_batchnorm)
 
         # our data is passed in float64 (i.e. double)
         self.start_section.double()

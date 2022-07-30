@@ -60,7 +60,8 @@ class VResNetModule(LightningModule):
                                            FullyConnectedNet(self.flatten_x_size, self.y_size,
                                                              hidden_layers_count=start_hidden_layers_count,
                                                              hidden_layers_unified_dim=self.y_size,
-                                                             with_batch_norm_hidden=with_batchnorm))
+                                                             with_batch_norm_hidden=with_batchnorm,
+                                                             with_relu_end=True))
 
         # Build the residuals chain
         res_blocks_list = []
@@ -102,6 +103,8 @@ class VResNetModule(LightningModule):
         self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
         self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
+        self.test_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
+        self.test_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
@@ -131,6 +134,8 @@ class VResNetModule(LightningModule):
         self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device).double()
 
     def forward(self, batch_x: torch.Tensor):
+        if self.mean_vascular_activity is not None:
+            self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
         if isinstance(batch_x, list):
             # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
             batch_x = batch_x[0]
@@ -200,9 +205,13 @@ class VResNetModule(LightningModule):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
-        acc = self.test_mse(preds, targets)
+        mse = self.test_mse(preds, targets)
+        nrmse = self.test_nrmse(preds, targets)
+        mbkmse = self.test_mbkmse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/mse", acc, on_step=False, on_epoch=True)
+        self.log("test/mse", mse, on_step=False, on_epoch=True)
+        self.log("test/nrmse", nrmse, on_step=False, on_epoch=True)
+        self.log("test/mbkmse", mbkmse, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -222,6 +231,8 @@ class VResNetModule(LightningModule):
         self.val_nrmse.reset()
         self.train_mbkmse.reset()
         self.val_mbkmse.reset()
+        self.test_nrmse.reset()
+        self.test_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.

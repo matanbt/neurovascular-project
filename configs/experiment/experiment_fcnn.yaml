@@ -19,13 +19,13 @@ name: "vfcnn_v1"
 seed: 42
 
 trainer:
-  min_epochs: 10
-  max_epochs: 300
+  min_epochs: 50
+  max_epochs: 400
   gradient_clip_val: 0.5
 
 model:
   # Optimizer
-  lr: 0.0001
+  lr: 0.001
   weight_decay: 0.00005
 
   # Arch Flags:

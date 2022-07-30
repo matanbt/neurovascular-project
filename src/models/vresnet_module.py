@@ -139,6 +139,7 @@ class VResNetModule(LightningModule):
         if isinstance(batch_x, list):
             # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
             batch_x = batch_x[0]
+        self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
 
         out = self.start_section(batch_x)
         if self.hparams.with_vascular_mean:

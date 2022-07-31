@@ -30,7 +30,7 @@ model:
 
   # Feature Extractor
   rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
-  rnn_dropout: 0.3
+  rnn_dropout: 0.25
   rnn_hidden_dim: 500
   rnn_layers_count: 1
   rnn_bidirectional: False
@@ -44,7 +44,7 @@ model:
   generate_pred_csv: False
 
 datamodule:
-  batch_size: 32
+  batch_size: 128
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
     data_dir: ${data_dir}  # data_dir is specified in config.yaml

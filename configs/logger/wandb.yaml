@@ -13,3 +13,6 @@ wandb:
   job_type: "train"
   group: ""
   tags: []
+  settings:
+    _target_: wandb.Settings
+    start_method: "fork"

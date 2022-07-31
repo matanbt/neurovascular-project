@@ -1,33 +1,50 @@
 from typing import Any, List
 
 import torch
-from torch.nn import Sequential, Linear, Dropout, MSELoss
+from torch.nn import Sequential, Linear, Dropout, MSELoss, ModuleList
 from pytorch_lightning import LightningModule
 from torchmetrics import MinMetric, MeanSquaredError, MeanAbsoluteError
 from src.utils.handmade_metrics import MeanBestKMSE, NormalizedRootMeanSquaredError
 
 
-class LinearRegressionModule(LightningModule):
+class LinearNetModule(LightningModule):
     def __init__(
-        self,
-        x_size,
-        y_size,
-        lr: float = 0.001,
-        weight_decay: float = 0.0005,
-        dropout: float = 0.0,
-        **kwargs
+            self,
+            x_size,
+            y_size,
+            hidden_sizes,
+            num_layers,
+            vessels_count,
+            lr: float = 0.001,
+            weight_decay: float = 0.0005,
+            dropout: float = 0.0,
     ):
         super().__init__()
-        self.vessels_count = y_size
+        self.vessels_count = vessels_count
+        
         # this line allows accessing init params with 'self.hparams' attribute
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
-        # self.net = torch.nn.Linear(x_size, y_size)
-        self.net = Sequential(
-            Linear(x_size, y_size),
-            Dropout(p=dropout)
-        )
+        # we allow passing single hidden size for the entire net, or hidden size for each layer
+        if type(hidden_sizes) == int:
+            hidden_sizes = [hidden_sizes] * (num_layers - 1)
+        else:
+            # we allow hidden sizes parameter to override num_layers parameter
+            num_layers = len(hidden_sizes) + 1
+
+        self.net = ModuleList()
+
+        self.net.append(Linear(x_size, hidden_sizes[0]))
+        self.net.append(Dropout(p=dropout))
+
+        # we assume num_layers >= 2, if not can use linear regression instead
+        for i in range(num_layers - 2):
+            self.net.append(Linear(hidden_sizes[i], hidden_sizes[i + 1]))
+            self.net.append(Dropout(p=dropout))
+
+        self.net.append(Linear(hidden_sizes[-1], y_size))
+
         self.net.double()  # our data is passed in float64 (i.e. double)
 
         def init_weights(m):
@@ -49,18 +66,13 @@ class LinearRegressionModule(LightningModule):
         # "handmade" metrics:
         self.train_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
-        self.test_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
         self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
-        self.test_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
         self.val_nrmse_best = MinMetric()
         self.val_mbkmse_best = MinMetric()
-
-        # flags:
-        self.show_weight_heatmap = False
 
     """
     A LightningModule organizes your PyTorch code into 5 sections:
@@ -75,7 +87,9 @@ class LinearRegressionModule(LightningModule):
     """
 
     def forward(self, x: torch.Tensor):
-        return self.net(x)
+        for layer in self.net:
+            x = layer(x)
+        return x
 
     def step(self, batch: Any):
         x, y = batch
@@ -134,19 +148,14 @@ class LinearRegressionModule(LightningModule):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
-        mse = self.test_mse(preds, targets)
-        nrmse = self.test_nrmse(preds, targets)
-        mbkmse = self.test_mbkmse(preds, targets)
+        acc = self.test_mse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/mse", mse, on_step=False, on_epoch=True)
-        self.log("test/nrmse", nrmse, on_step=False, on_epoch=True)
-        self.log("test/mbkmse", mbkmse, on_step=False, on_epoch=True)
+        self.log("test/mse", acc, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
     def test_epoch_end(self, outputs: List[Any]):
         pass
-
 
     def on_epoch_end(self):
         # reset metrics at the end of every epoch
@@ -155,10 +164,8 @@ class LinearRegressionModule(LightningModule):
         self.val_mse.reset()
         self.train_nrmse.reset()
         self.val_nrmse.reset()
-        self.test_nrmse.reset()
         self.train_mbkmse.reset()
         self.val_mbkmse.reset()
-        self.test_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.
@@ -167,6 +174,21 @@ class LinearRegressionModule(LightningModule):
         See examples here:
             https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html#configure-optimizers
         """
-        return torch.optim.Adam(
-            params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
-        )
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay)
+        sch = torch.optim.lr_scheduler.ExponentialLR(
+            optimizer, gamma=0.99)
+        # sch = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
+        #     optimizer, T_0=10)
+        # sch = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        #     optimizer, factor=0.1)
+        # learning rate scheduler
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": sch,
+                "monitor": "train/loss",
+            }
+        }
+        # return torch.optim.Adam(
+        #     params=self.parameters(), lr=self.hparams.lr, weight_decay=self.hparams.weight_decay
+        # )

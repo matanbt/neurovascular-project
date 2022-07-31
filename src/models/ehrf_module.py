@@ -25,7 +25,7 @@ class EHRFModule(LightningModule):
         with_vascular_mean: bool = False,  # Whether to insert vascular mean before prediction (should help)
         with_conv_1d: bool = True,
         with_latent_fcnn: bool = False,
-        with_distances: bool = True,       # Whether to include distances in our formula
+        with_distances: bool = True,       # Whether to include distances in our formula, False means Distances will be learnable matrix
 
         # Average Baseline config
         predict_with_mean_vascular_only: bool = False,  # Naive model predicts the mean activity
@@ -59,11 +59,15 @@ class EHRFModule(LightningModule):
                                                      out_channels=1, kernel_size=1))
             curr_in_channel = 1
             if i != conv_1d_hidden_layers:  # add non-linearity to inner layers
+                neuronal_conv_1d_layers.append(nn.BatchNorm1d(num_features=1))
                 neuronal_conv_1d_layers.append(nn.ReLU())
 
         self.neuronal_conv_1d_layers = nn.Sequential(*neuronal_conv_1d_layers)
         self.neuronal_conv_1d_layers.double()  # our data is passed in float64 (i.e. double)
         self.neuronal_conv_1d_layers.apply(self.init_weights)
+
+        # Replace distances if needed
+        self.learnable_distances_fcnn = nn.Linear(self.neuron_count, self.y_size)
 
         # Build the latent variables to vascular activity transformation
         latent_fcnn_layers = [nn.Flatten()]
@@ -94,8 +98,10 @@ class EHRFModule(LightningModule):
         # "handmade" metrics:
         self.train_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.val_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
+        self.test_nrmse = NormalizedRootMeanSquaredError(vessels_count=self.vessels_count)
         self.train_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
         self.val_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
+        self.test_mbkmse = MeanBestKMSE(vessels_count=self.vessels_count)
 
         # for logging best so far validation accuracy
         self.val_mse_best = MinMetric()
@@ -157,6 +163,8 @@ class EHRFModule(LightningModule):
             #  each neuron is weighted by distance from blood vessel
             if self.with_conv_1d and not self.hparams.predict_with_mean_vascular_only:
                 vascu_pred[i] += (torch.exp(-self.distances) * neuronal_convoluted[i, :]).sum(dim=1)
+            elif not self.hparams.with_distances and self.with_conv_1d and not self.hparams.predict_with_mean_vascular_only: # linear layer to vascular
+                vascu_pred[i] += self.learnable_distances_fcnn(neuronal_convoluted[i, :])
             elif self.hparams.predict_with_mean_vascular_only:
                 # HACK for predicting mean only for naive model configuration
                 vascu_pred[i] += (torch.exp(-self.distances) * neuronal_convoluted[i, :]).sum(dim=1) * 0
@@ -220,9 +228,13 @@ class EHRFModule(LightningModule):
         loss, preds, targets = self.step(batch)
 
         # log test metrics
-        acc = self.test_mse(preds, targets)
+        mse = self.test_mse(preds, targets)
+        nrmse = self.test_nrmse(preds, targets)
+        mbkmse = self.test_mbkmse(preds, targets)
         self.log("test/loss", loss, on_step=False, on_epoch=True)
-        self.log("test/mse", acc, on_step=False, on_epoch=True)
+        self.log("test/mse", mse, on_step=False, on_epoch=True)
+        self.log("test/nrmse", nrmse, on_step=False, on_epoch=True)
+        self.log("test/mbkmse", mbkmse, on_step=False, on_epoch=True)
 
         return {"loss": loss, "preds": preds, "targets": targets}
 
@@ -240,8 +252,10 @@ class EHRFModule(LightningModule):
         self.val_mse.reset()
         self.train_nrmse.reset()
         self.val_nrmse.reset()
+        self.test_nrmse.reset()
         self.train_mbkmse.reset()
         self.val_mbkmse.reset()
+        self.test_mbkmse.reset()
 
     def configure_optimizers(self):
         """Choose what optimizers and learning-rate schedulers to use in your optimization.
@@ -258,5 +272,5 @@ class EHRFModule(LightningModule):
     def init_weights(m):
         """ Initialize the given layer """
         if isinstance(m, torch.nn.Linear):
-            torch.nn.init.xavier_uniform(m.weight)
+            torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
             m.bias.data.fill_(0.01)

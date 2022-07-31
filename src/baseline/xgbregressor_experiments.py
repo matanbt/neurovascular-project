@@ -36,8 +36,8 @@ def tune_hyperparameters(save_to_csv=True) -> pd.DataFrame:
         except:
             continue
         num_samples = len(dataset)
-        train_size = 0.85 * num_samples
-        test_size = 0.075 * num_samples
+        train_size = int(0.85 * num_samples)
+        test_size = int(0.075 * num_samples)
         model = NVXGBLinearRegressionModel(dataset=dataset, train_size=train_size, test_size=test_size, lr=lr, max_depth=max_depth,
                                            n_estimators=n_estimators)
 

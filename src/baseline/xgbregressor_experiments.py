@@ -5,8 +5,6 @@ import pandas as pd
 from src.baseline.more_models import NVXGBLinearRegressionModel
 from src.datamodules.components.nv_datasets import NVDataset_Tabular
 
-TEST_SIZE = 800
-
 
 def tune_hyperparameters(save_to_csv=True) -> pd.DataFrame:
     """
@@ -37,8 +35,10 @@ def tune_hyperparameters(save_to_csv=True) -> pd.DataFrame:
             )
         except:
             continue
-
-        model = NVXGBLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE, lr=lr, max_depth=max_depth,
+        num_samples = len(dataset)
+        train_size = 0.85 * num_samples
+        test_size = 0.075 * num_samples
+        model = NVXGBLinearRegressionModel(dataset=dataset, train_size=train_size, test_size=test_size, lr=lr, max_depth=max_depth,
                                            n_estimators=n_estimators)
 
         model.fit()
@@ -51,7 +51,7 @@ def tune_hyperparameters(save_to_csv=True) -> pd.DataFrame:
         experiments_df = pd.DataFrame(experiments_table)
 
         if save_to_csv:
-            experiments_df.to_csv("xgbregressor_hparams_tuning.csv")
+            experiments_df.to_csv("fixed_xgbregressor_hparams_tuning.csv")
 
     return experiments_df
 

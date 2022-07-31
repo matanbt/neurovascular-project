@@ -100,6 +100,7 @@ from xgboost import XGBRegressor, cv, DMatrix
 class NVXGBLinearRegressionModel:
     def __init__(self,
                  dataset: NVDataset_Tabular,
+                 train_size,
                  test_size,
                  lr=0.01,
                  max_depth=6,
@@ -118,8 +119,8 @@ class NVXGBLinearRegressionModel:
         self.x, self.y = x, y
 
         # split the dataset
-        self.x_train, self.x_test = x[:-test_size], x[-test_size:]
-        self.y_train, self.y_test = y[:-test_size], y[-test_size:]
+        self.x_train, self.x_test = x[:train_size], x[-test_size:]
+        self.y_train, self.y_test = y[:train_size], y[-test_size:]
 
         self.test_size = test_size
 

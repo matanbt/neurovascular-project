@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "rnn_v1"
+name: "rnn_dual"
 
 seed: 42
 
@@ -28,7 +28,7 @@ model:
   lr: 0.0001
   weight_decay: 0.00003
 
-  # Feature Extractor(s)
+  # Feature Extractor
   rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
   rnn_dropout: 0.25
   rnn_hidden_dim: 500
@@ -36,7 +36,7 @@ model:
   rnn_bidirectional: False
 
   # Whether to include vascular activity in the arch
-  with_vascular_activity: False
+  with_vascular_activity: True
 
   # Regressor
   regressor_hidden_layers_list: [] #[500,]

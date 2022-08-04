@@ -27,6 +27,9 @@ class RNNHRFModule(LightningModule):
         rnn_layers_count: int = 1,
         rnn_bidirectional: bool = False,
 
+        # Whether to include vascular activity in the arch
+        with_vascular_activity: bool = False,
+
         # Regressor Model's Hyper-parameters:
         regressor_hidden_layers_list: list = (500, ),  # dims for the hidden FC layers of regressor
         regressor_hidden_layers_dropout: float = 0.4,
@@ -44,13 +47,15 @@ class RNNHRFModule(LightningModule):
 
         # More data:
         self.x_size, self.y_size = x_size, y_size
-        self.neuron_count, self.neuro_window_size, self.vessels_count = x_size[0], x_size[1], y_size
+        self.x_size_neuro, self.x_size_vascu = x_size['x_neuro_size'], x_size['x_vascu_size']
+        self.neuron_count, self.neuro_window_size, self.vessels_count = self.x_size_neuro[0], self.x_size_neuro[1], y_size
         self.distances = None  # will be added later
         self.mean_vascular_activity = None  # will be added later
+        self.with_vascular_activity = with_vascular_activity  # will be added later
 
         RNN_Model = self._get_rnn_model(rnn_model_type)
 
-        # Build RNN as feature extractor (alternative)
+        # Build RNN as neuronal activity feature extractor
         rnn_layers = [
             RNN_Model(input_size=self.neuron_count,
                       hidden_size=rnn_hidden_dim,
@@ -59,7 +64,24 @@ class RNNHRFModule(LightningModule):
                       bidirectional=rnn_bidirectional,
                       batch_first=True)
             ]
-        self.feature_extractor = nn.Sequential(*rnn_layers)
+        self.neuro_feature_extractor = nn.Sequential(*rnn_layers)
+        self.neuro_feature_extractor.double()  # our data is passed in float64 (i.e. double)
+        self.neuro_feature_extractor.apply(self.init_weights)
+
+        if with_vascular_activity:
+            # Build RNN as vascular activity feature extractor
+            rnn_layers = [
+                RNN_Model(input_size=self.vessels_count,
+                          hidden_size=rnn_hidden_dim,
+                          num_layers=rnn_layers_count,
+                          dropout=rnn_dropout,
+                          bidirectional=rnn_bidirectional,
+                          batch_first=True)
+                ]
+            self.vascu_feature_extractor = nn.Sequential(*rnn_layers)
+            # Init weights
+            self.vascu_feature_extractor.double()  # our data is passed in float64 (i.e. double)
+            self.vascu_feature_extractor.apply(self.init_weights)
 
         # Build the regressor:
         fc_layers = []
@@ -73,11 +95,6 @@ class RNNHRFModule(LightningModule):
             nn.LazyLinear(self.y_size)
         )
         self.regressor = nn.Sequential(*fc_layers)
-
-        # Init weights
-        self.feature_extractor.double()  # our data is passed in float64 (i.e. double)
-        self.feature_extractor.apply(self.init_weights)
-        log.info(self.feature_extractor)
 
         self.regressor.double()  # our data is passed in float64 (i.e. double)
         # Initializing the regressor weight is done after the mock forward pass...
@@ -118,23 +135,16 @@ class RNNHRFModule(LightningModule):
         https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html
     """
 
-    def set_extras(self, extras):
-        """ Set extras from dataset (MUST be called before training) """
-        self.distances = extras['distances']
-        self.distances = self.distances.to(device=self.device).double()
-        self.mean_vascular_activity = torch.Tensor(extras['mean_vascular_activity'])
-        self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device).double()
-
     def mock_forward_pass(self):
         """ Runs a mock forward pass, in order to initialize dimensions (we also initialize what we need afterwards)"""
         with torch.no_grad():
-            self.forward(torch.rand(1, *self.x_size))
+            self.forward(torch.rand(1, *self.x_size_neuro), torch.rand(1, *self.x_size_vascu))
 
         # Stuff we can do only after the first forward pass:
         self.regressor.apply(self.init_weights)
         log.info(self.regressor)
 
-    def _get_rnn_model(self, rnn_model_type: str ) -> torch.nn.Module:
+    def _get_rnn_model(self, rnn_model_type: str) -> torch.nn.Module:
         """ Map user-string to RNN module """
         # List of possible rnn models:
         rnn_models = {
@@ -146,27 +156,35 @@ class RNNHRFModule(LightningModule):
             f'Expected RNN model to be from {possible_rnn_models} but got {rnn_model_type}'
         return rnn_models[rnn_model_type]
 
-    def forward(self, batch_x: torch.Tensor):
-        if self.distances is not None:
-            self.distances = self.distances.to(device=self.device)
-        if self.mean_vascular_activity is not None:
-            self.mean_vascular_activity = self.mean_vascular_activity.to(device=self.device)
-
-        if isinstance(batch_x, list):
+    def forward(self, x_neuro: torch.Tensor, x_vascu: torch.Tensor):
+        if isinstance(x_neuro, list):
             # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
-            batch_x = batch_x[0]
+            x_neuro = x_neuro[0]
+            x_vascu = x_vascu[0]
 
-        batch_x = batch_x.double()
-        batch_x = torch.transpose(batch_x, -2, -1)  # the recurrence is on each timestamp
-        features_vector, _ = self.feature_extractor(batch_x)
-        features_vector = features_vector[:, -1, :]  # get last hidden state
+        x_vascu = x_vascu.double()
+        x_vascu = torch.transpose(x_vascu, -2, -1)  # the recurrence is on each timestamp
+        x_neuro = x_neuro.double()
+        x_neuro = torch.transpose(x_neuro, -2, -1)  # the recurrence is on each timestamp
+
+        # Run "neuronal" RNN
+        neuro_features_vector, _ = self.neuro_feature_extractor(x_neuro)
+        features_vector = neuro_features_vector[:, -1, :]  # get last hidden state
+
+        if self.with_vascular_activity:
+            # Run "Vascular" RNN
+            vascu_features_vector, _ = self.vascu_feature_extractor(x_vascu)
+            vascu_features_vector = vascu_features_vector[:, -1, :]  # get last hidden state
+            # Concat the vascular features to the neuronal
+            features_vector = torch.cat([features_vector, vascu_features_vector], dim=1)
+
         vascu_pred = self.regressor(features_vector)
 
         return vascu_pred
 
     def step(self, batch: Any):
-        x, y = batch
-        logits = self.forward(x)
+        x_neuro, x_vascu, y = batch
+        logits = self.forward(x_neuro, x_vascu)
         loss = self.criterion(logits, y)
         preds = logits
         return loss, preds, y

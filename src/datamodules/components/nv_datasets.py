@@ -387,7 +387,7 @@ class NVDataset_RNN(NVDataset_Base):
         self.window_len_vascu_back = window_len_vascu_back
         self.window_len_neuro_back = window_len_neuro_back
         self.window_len_neuro_forward = window_len_neuro_forward
-        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward)
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back)
 
         # Validate dataset parameters
         self.validate_params()

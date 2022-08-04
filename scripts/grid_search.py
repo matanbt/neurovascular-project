@@ -86,8 +86,8 @@ def rnn_grid():
     wind_backs = [1, 7, 50]
     wind_forwards = [1, 7, 50]
     rnn_model_types = ['LSTM', 'GRU']
-    rnn_bis = [True, False]
-    rnn_layers_counts = [1, 3]
+    rnn_bis = [False]  # [True, False]
+    rnn_layers_counts = [1]  # [1, 3]
     regressor_hidden_layers_lists = ["[]", "[500]"]
     all_combinations = itertools.product(datasets, wind_backs, wind_forwards, rnn_model_types, rnn_bis, rnn_layers_counts, regressor_hidden_layers_lists)
 
@@ -99,6 +99,47 @@ def rnn_grid():
               f"datamodule.dataset_object.dataset_name={dataset} " \
               f"datamodule.batch_size=128 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back} " \
+              f"datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
+              f"model.rnn_model_type={rnn_model_type} " \
+              f"model.rnn_bidirectional={rnn_bidirectional} " \
+              f"model.rnn_layers_count={rnn_layers_count} " \
+              f"model.rnn_dropout=0.3 model.rnn_hidden_dim=500 " \
+              f"model.regressor_hidden_layers_list={regressor_hidden_layers_list} " \
+              f"model.regressor_hidden_layers_dropout=0.3 " \
+              f"name={name}"
+        print(f"cmd: {cmd}")
+        res = subprocess.run(cmd, shell=True)
+        if res.returncode != 0:
+            print(">>> RUN FAILED!!!")
+            print(res.stderr)
+            break
+
+    print("DONE")
+
+
+@app.command()
+def rnn_dual_grid():
+    # Grid on possible architectures of ehrf
+    name = 'rnn_dual_grid'
+    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    wind_backs = [50]
+    wind_forwards = [50]
+    vascu_wind_backs = [10, 50]
+    rnn_model_types = ['LSTM', 'GRU']
+    rnn_bis = [False]  # [True, False]
+    rnn_layers_counts = [1]  # [1, 3]
+    regressor_hidden_layers_lists = ["[]", "[500]"]
+    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, vascu_wind_backs, rnn_model_types, rnn_bis, rnn_layers_counts, regressor_hidden_layers_lists)
+
+    for dataset, wind_back, wind_forward, vascu_wind_back, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list in all_combinations:
+        print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list)
+        cmd = f"python train.py -m experiment=experiment_rnn_dual " \
+              f"trainer.gpus=1 logger=wandb trainer.min_epochs=30 trainer.max_epochs=200 " \
+              f"model.lr=0.00001 " \
+              f"datamodule.dataset_object.dataset_name={dataset} " \
+              f"datamodule.batch_size=128 " \
+              f"datamodule.dataset_object.window_len_neuro_back={wind_back} " \
+              f"datamodule.dataset_object.window_len_vascu_back={vascu_wind_back} " \
               f"datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
               f"model.rnn_model_type={rnn_model_type} " \
               f"model.rnn_bidirectional={rnn_bidirectional} " \

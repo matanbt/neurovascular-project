@@ -34,6 +34,9 @@ class RNNHRFModule(LightningModule):
         regressor_hidden_layers_list: list = (500, ),  # dims for the hidden FC layers of regressor
         regressor_hidden_layers_dropout: float = 0.4,
 
+        # Persistence Model mode
+        persistence_control_model_mode: bool = False,
+
         lr: float = 0.001,
         weight_decay: float = 0.0005,
 
@@ -179,6 +182,10 @@ class RNNHRFModule(LightningModule):
             features_vector = torch.cat([features_vector, vascu_features_vector], dim=1)
 
         vascu_pred = self.regressor(features_vector)
+
+        if self.hparams.persistence_control_model_mode:
+            # HACK to make this module Persistence model
+            vascu_pred = x_vascu[:, -1, :] + 0 * vascu_pred
 
         return vascu_pred
 

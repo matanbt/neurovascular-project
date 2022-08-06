@@ -1,0 +1,57 @@
+# @package _global_
+
+# to execute this experiment run:
+# python train.py experiment=lin_regr.yaml [hparams_search=neurovascu_optuna]
+
+defaults:
+  - override /datamodule: neurovascu.yaml
+  - override /model: rnn.yaml
+  - override /callbacks: default.yaml
+  - override /logger: comet.yaml
+  - override /trainer: default.yaml
+
+# all parameters below will be merged with parameters from default configurations set above
+# this allows you to overwrite only specified parameters
+
+# name of the run determines folder name in logs
+name: "persistence_baseline"
+
+seed: 42
+
+trainer:
+  min_epochs: 1
+  max_epochs: 1
+  gradient_clip_val: 0.5
+
+model:
+  # Optimizer
+  lr: 0.0001
+  weight_decay: 0.00003
+
+  # Feature Extractor
+  rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
+  rnn_dropout: 0.25
+  rnn_hidden_dim: 500
+  rnn_layers_count: 1
+  rnn_bidirectional: False
+
+  # Whether to include vascular activity in the arch
+  with_vascular_activity: False
+
+  # Regressor
+  regressor_hidden_layers_list: [] #[500,]
+  regressor_hidden_layers_dropout: 0.3
+
+  # Flags:
+  persistence_control_model_mode: True  # turns the module to Persistence Model (control experiment)
+  generate_pred_csv: False
+
+datamodule:
+  batch_size: 128
+  dataset_object:
+    _target_: src.datamodules.components.nv_datasets.NVDataset_RNN
+    data_dir: ${data_dir}  # data_dir is specified in config.yaml
+    dataset_name: 2021_02_01_18_45_51_neurovascular_full_dataset
+    window_len_neuro_back: 1
+    window_len_neuro_forward: 0
+    window_len_vascu_back: 1

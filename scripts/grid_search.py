@@ -56,6 +56,7 @@ def lin_regr_wind_with_vascu_grid():
               f" datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
               f" datamodule.dataset_object.window_len_vascu_back={wind_forwards_vascu} " \
               f"name={name}"
+        print(f"CMD: {cmd}")
         res = subprocess.run(cmd, shell=True)
         if res.returncode != 0:
             print(">>> RUN FAILED!!!")
@@ -82,7 +83,7 @@ def ehrf_arch_grid():
     all_combinations = itertools.product(datasets, conv_1d_hidden_layers_options, [flags_mean, flags_no_dis])
 
     for dataset, conv_1d_hidden_layers, flags in all_combinations:
-        with_vascular_mean, with_distances, with_latent_fcnn = flags 
+        with_vascular_mean, with_distances, with_latent_fcnn = flags
         print(f">>> running: dataset={dataset}, with_distances={with_distances}, "
               f"with_vascular_mean={with_vascular_mean}, with_latent_fcnn={with_latent_fcnn}")
         cmd = f"python train.py -m experiment=experiment_ehrf " \
@@ -111,10 +112,10 @@ def ehrf_arch_grid():
 def rnn_grid():
     # Grid on possible architectures of ehrf
     name = 'rnn_grid'
-    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
-    wind_backs = [1, 7, 50]
-    wind_forwards = [1, 7, 50]
-    rnn_model_types = ['LSTM', 'GRU']
+    datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset']  # ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    wind_backs = [50]
+    wind_forwards = [50]
+    rnn_model_types = ['LSTM']#, 'GRU']
     rnn_bis = [False]  # [True, False]
     rnn_layers_counts = [1]  # [1, 3]
     regressor_hidden_layers_lists = ["[]", "[500]"]
@@ -150,7 +151,7 @@ def rnn_grid():
 def rnn_dual_grid():
     # Grid on possible architectures of ehrf
     name = 'rnn_dual_grid'
-    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset'] #['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
     wind_backs = [50]
     wind_forwards = [50]
     vascu_wind_backs = [10, 50]

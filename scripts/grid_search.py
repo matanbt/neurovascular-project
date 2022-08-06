@@ -54,7 +54,7 @@ def lin_regr_wind_with_vascu_grid():
               "datamodule.batch_size=128 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back}" \
               f" datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
-              f" datamodule.dataset_object.window_len_vascu_back={wind_forwards_vascu} " \
+              f" datamodule.dataset_object.window_len_vascu_back={wind_forward_vascu} " \
               f"name={name}"
         print(f"CMD: {cmd}")
         res = subprocess.run(cmd, shell=True)

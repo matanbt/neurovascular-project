@@ -50,6 +50,7 @@ def lin_regr_wind_with_vascu_grid():
         print(f">>> running: dataset={dataset}, wind_back={wind_back}, wind_forward={wind_forward}")
         cmd = "python train.py -m experiment=experiment_lin_regr trainer.gpus=1 logger=wandb trainer.min_epochs=50 " \
               "trainer.max_epochs=500 " \
+              "model.lr=0.0005 " \
               f"datamodule.dataset_object.dataset_name={dataset} " \
               "datamodule.batch_size=128 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back}" \

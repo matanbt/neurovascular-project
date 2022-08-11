@@ -40,10 +40,10 @@ def lin_regr_wind_grid():
 def lin_regr_wind_with_vascu_grid():
     # Grid on possible window-sizes (lin regression)
     name = 'lin_regr_wind_with_vascu_grid'
-    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
-    wind_backs = [1, 10, 50, 70]
-    wind_forwards = [1, 10, 50, 70]
-    wind_forwards_vascu = [1, 2, 5, 7, 10, 15, 20, 30, 50, 70, 100, 150]
+    datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset'] # ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    wind_backs = [1, 10, 50]
+    wind_forwards = [1, 10, 50]
+    wind_forwards_vascu = [1, 10, 50, 70, 150]
     all_combinations = itertools.product(datasets, wind_backs, wind_forwards, wind_forwards_vascu)
 
     for dataset, wind_back, wind_forward, wind_forward_vascu in all_combinations:
@@ -193,18 +193,20 @@ def rnn_dual_grid():
 def fcnn_grid():
     # Grid on possible architectures of ehrf
     name = 'fcnn_grid'
-    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
-    wind_backs = [1, 7, 50]
-    wind_forwards = [1, 7, 50]
+    datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset']  # ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    wind_backs = [1, 10, 50]
+    wind_forwards = [1, 10, 50]
     with_vascular_means = [True, False]
-    with_droupouts = [0, 0.4]
-    res_block_layers_counts = [1, 3, 5, 10, 15, 30]
+    with_droupouts = [0.4]
+    res_block_layers_counts = [3, 5, 30]
     all_combinations = itertools.product(datasets, wind_backs, wind_forwards,
                                          with_vascular_means, res_block_layers_counts, with_droupouts)
 
     for dataset, wind_back, wind_forward, with_vascular_mean, res_block_layers_count, with_droupout in all_combinations:
         print(f">>> running: ", dataset, wind_back, wind_forward, with_vascular_mean,
               res_block_layers_count, with_droupout)
+        if res_block_layers_count > 3 and (wind_back != wind_forward):
+            continue  # deep nets will run only equal wind sizes (to save time)
         with_batchnorm = with_droupout == 0  # add BN when no dropout
         cmd = f"python train.py -m experiment=experiment_fcnn " \
               f"trainer.gpus=1 logger=wandb trainer.min_epochs=50 trainer.max_epochs=450 " \

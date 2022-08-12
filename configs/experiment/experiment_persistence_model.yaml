@@ -31,7 +31,7 @@ model:
   # Feature Extractor
   rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
   rnn_dropout: 0.25
-  rnn_hidden_dim: 500
+  rnn_hidden_dim: 5
   rnn_layers_count: 1
   rnn_bidirectional: False
 
@@ -51,7 +51,8 @@ datamodule:
   dataset_object:
     _target_: src.datamodules.components.nv_datasets.NVDataset_RNN
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
-    dataset_name: 2021_02_01_18_45_51_neurovascular_full_dataset
+    dataset_name: 2021_02_01_19_19_39_neurovascular_full_dataset
     window_len_neuro_back: 1
     window_len_neuro_forward: 0
     window_len_vascu_back: 1
+    vascu_delay: 2

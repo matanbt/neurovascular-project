@@ -39,14 +39,17 @@ def lin_regr_wind_grid():
 @app.command()
 def lin_regr_wind_with_vascu_grid():
     # Grid on possible window-sizes (lin regression)
-    name = 'lin_regr_wind_with_vascu_grid'
+    name = 'lin_regr_wind_with_delayed_vascu_grid'
     datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset'] # ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
-    wind_backs = [1, 10, 50]
-    wind_forwards = [1, 10, 50]
-    wind_forwards_vascu = [1, 10, 50, 70, 150]
-    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, wind_forwards_vascu)
+    wind_backs = [10]  # [1, 10, 50]
+    wind_forwards = [10]  # [1, 10, 50]
+    wind_forwards_vascu = [1, 10, 50]
+    wind_delays_vascu = [1, 2, 5]
+    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, wind_forwards_vascu, wind_delays_vascu)
 
-    for dataset, wind_back, wind_forward, wind_forward_vascu in all_combinations:
+    for dataset, wind_back, wind_forward, wind_forward_vascu, wind_delay_vascu in all_combinations:
+        if wind_back != wind_forward:
+            continue
         print(f">>> running: dataset={dataset}, wind_back={wind_back}, wind_forward={wind_forward}")
         cmd = "python train.py -m experiment=experiment_lin_regr trainer.gpus=1 logger=wandb trainer.min_epochs=50 " \
               "trainer.max_epochs=500 " \
@@ -56,6 +59,7 @@ def lin_regr_wind_with_vascu_grid():
               f"datamodule.dataset_object.window_len_neuro_back={wind_back}" \
               f" datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
               f" datamodule.dataset_object.window_len_vascu_back={wind_forward_vascu} " \
+              f" datamodule.dataset_object.vascu_delay={wind_delay_vascu} " \
               f"name={name}"
         print(f"CMD: {cmd}")
         res = subprocess.run(cmd, shell=True)

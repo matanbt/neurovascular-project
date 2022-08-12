@@ -121,6 +121,7 @@ class NVDataset_Classic(NVDataset_Base):
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 5,
                  window_len_vascu_back: int = 5,
+                 vascu_delay: int = 0,
                  window_len_y: int = 1,
                  scaling_method: str = None,
                  aggregate_window="flatten",
@@ -147,8 +148,10 @@ class NVDataset_Classic(NVDataset_Base):
         self.window_len_neuro_back = window_len_neuro_back
         self.window_len_neuro_forward = window_len_neuro_forward
         self.window_len_vascu_back = window_len_vascu_back
+        self.vascu_delay = vascu_delay
         self.window_len_y = window_len_y
-        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back, window_len_y)
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward,
+                                  window_len_vascu_back + self.vascu_delay, window_len_y)
 
         # Polynomial featuring
         self.poly_degree = poly_degree
@@ -199,8 +202,8 @@ class NVDataset_Classic(NVDataset_Base):
         x[:self.neuro_window_size] = self.neuro_activity_array[:, neuro_wind_start: neuro_wind_end].flatten()
 
         if self.vascu_window_size > 0:
-            vascu_wind_start = idx - self.window_len_vascu_back
-            vascu_wind_end = idx
+            vascu_wind_start = idx - self.window_len_vascu_back - self.vascu_delay
+            vascu_wind_end = idx - self.vascu_delay
             x[self.neuro_window_size:] = self.vascu_activity_array[:, vascu_wind_start: vascu_wind_end].flatten()
 
         if self.poly_transform is not None:
@@ -366,6 +369,7 @@ class NVDataset_RNN(NVDataset_Base):
 
                  # Dataset hyper parameters:
                  window_len_vascu_back: int = 50,
+                 vascu_delay: int = 0,  # makes the window: {t-w-delay, ... t-delay}
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 2,
                  scaling_method: str = None,  # maybe scaling with Sigmoid will help?
@@ -387,7 +391,9 @@ class NVDataset_RNN(NVDataset_Base):
         self.window_len_vascu_back = window_len_vascu_back
         self.window_len_neuro_back = window_len_neuro_back
         self.window_len_neuro_forward = window_len_neuro_forward
-        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back)
+        self.vascu_delay = vascu_delay
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward,
+                                  window_len_vascu_back + self.vascu_delay)
 
         # Validate dataset parameters
         self.validate_params()
@@ -429,7 +435,7 @@ class NVDataset_RNN(NVDataset_Base):
         neuro_wind_start = idx - self.window_len_neuro_back
         neuro_wind_end = idx + self.window_len_neuro_forward
         x_neuro = self.neuro_activity_array[:, neuro_wind_start: neuro_wind_end]
-        x_vascu = self.vascu_activity_array[:, vascu_wind_start: idx]
+        x_vascu = self.vascu_activity_array[:, vascu_wind_start - self.vascu_delay: idx - self.vascu_delay]
 
         # Build Y:
         y = self.vascu_activity_array[:, idx]

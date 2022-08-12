@@ -112,23 +112,25 @@ def ehrf_arch_grid():
 @app.command()
 def rnn_grid():
     # Grid on possible architectures of ehrf
-    name = 'rnn_grid'
-    datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset']  # ['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
-    wind_backs = [50]
-    wind_forwards = [50]
-    rnn_model_types = ['LSTM']#, 'GRU']
-    rnn_bis = [False]  # [True, False]
+    name = 'rnn_wind_grid'
+    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset']  # ['', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    wind_backs = [10, 100, 50]
+    wind_forwards = [10, 100, 50]
+    rnn_model_types = ['LSTM']  #, 'GRU']
+    rnn_bis = [False, True]
     rnn_layers_counts = [1]  # [1, 3]
-    regressor_hidden_layers_lists = ["[]", "[500]"]
+    regressor_hidden_layers_lists = ["[]"]  #, "[500]"]
     all_combinations = itertools.product(datasets, wind_backs, wind_forwards, rnn_model_types, rnn_bis, rnn_layers_counts, regressor_hidden_layers_lists)
 
     for dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list in all_combinations:
         print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list)
+        if wind_forward != wind_back:
+            continue
         cmd = f"python train.py -m experiment=experiment_rnn " \
               f"trainer.gpus=1 logger=wandb trainer.min_epochs=30 trainer.max_epochs=200 " \
               f"model.lr=0.00001 " \
               f"datamodule.dataset_object.dataset_name={dataset} " \
-              f"datamodule.batch_size=128 " \
+              f"datamodule.batch_size=512 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back} " \
               f"datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
               f"model.rnn_model_type={rnn_model_type} " \

@@ -157,27 +157,29 @@ def rnn_grid():
 @app.command()
 def rnn_dual_grid():
     # Grid on possible architectures of ehrf
-    name = 'rnn_dual_grid'
+    name = 'rnn_dual_delayed_grid'
     datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset'] #['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
     wind_backs = [50]
     wind_forwards = [50]
-    vascu_wind_backs = [10, 50]
-    rnn_model_types = ['LSTM', 'GRU']
+    vascu_wind_backs = [50]
+    vascu_wind_delays = [1, 2, 5]
+    rnn_model_types = ['LSTM'] #['LSTM', 'GRU']
     rnn_bis = [False]  # [True, False]
     rnn_layers_counts = [1]  # [1, 3]
-    regressor_hidden_layers_lists = ["[]", "[500]"]
-    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, vascu_wind_backs, rnn_model_types, rnn_bis, rnn_layers_counts, regressor_hidden_layers_lists)
+    regressor_hidden_layers_lists = ["[]"] #, "[500]"]
+    all_combinations = itertools.product(datasets, wind_backs, wind_forwards, vascu_wind_backs, rnn_model_types, rnn_bis, rnn_layers_counts, regressor_hidden_layers_lists, vascu_wind_delays)
 
-    for dataset, wind_back, wind_forward, vascu_wind_back, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list in all_combinations:
-        print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list)
+    for dataset, wind_back, wind_forward, vascu_wind_back, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list, vascu_wind_delay in all_combinations:
+        print(f">>> running: ", dataset, wind_back, wind_forward, rnn_model_type, rnn_bidirectional, rnn_layers_count, regressor_hidden_layers_list, vascu_wind_delay)
         cmd = f"python train.py -m experiment=experiment_rnn_dual " \
-              f"trainer.gpus=1 logger=wandb trainer.min_epochs=30 trainer.max_epochs=200 " \
+              f"trainer.gpus=1 logger=wandb trainer.min_epochs=30 trainer.max_epochs=500 " \
               f"model.lr=0.00001 " \
               f"datamodule.dataset_object.dataset_name={dataset} " \
-              f"datamodule.batch_size=128 " \
+              f"datamodule.batch_size=256 " \
               f"datamodule.dataset_object.window_len_neuro_back={wind_back} " \
               f"datamodule.dataset_object.window_len_vascu_back={vascu_wind_back} " \
               f"datamodule.dataset_object.window_len_neuro_forward={wind_forward} " \
+              f"datamodule.dataset_object.vascu_delay={vascu_wind_delay} " \
               f"model.rnn_model_type={rnn_model_type} " \
               f"model.rnn_bidirectional={rnn_bidirectional} " \
               f"model.rnn_layers_count={rnn_layers_count} " \

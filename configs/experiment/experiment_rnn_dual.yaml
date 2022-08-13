@@ -54,3 +54,4 @@ datamodule:
     window_len_neuro_back: 10
     window_len_neuro_forward: 5
     window_len_vascu_back: 50
+    vascu_delay: 50

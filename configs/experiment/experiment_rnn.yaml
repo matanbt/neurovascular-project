@@ -53,4 +53,4 @@ datamodule:
     dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
     window_len_neuro_back: 10
     window_len_neuro_forward: 5
-    window_len_vascu_back: 50
+    window_len_vascu_back: 0

@@ -158,7 +158,7 @@ def rnn_grid():
 def rnn_dual_grid():
     # Grid on possible architectures of ehrf
     name = 'rnn_dual_delayed_grid'
-    datasets = ['2021_02_01_19_19_39_neurovascular_full_dataset'] #['2021_02_01_18_45_51_neurovascular_full_dataset', '2021_02_01_19_19_39_neurovascular_full_dataset']
+    datasets = ['2021_02_01_18_45_51_neurovascular_full_dataset']  #['2021_02_01_19_19_39_neurovascular_full_dataset'] #['', '2021_02_01_19_19_39_neurovascular_full_dataset']
     wind_backs = [50]
     wind_forwards = [50]
     vascu_wind_backs = [50]

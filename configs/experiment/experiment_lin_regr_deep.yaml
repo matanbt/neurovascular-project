@@ -14,7 +14,7 @@ defaults:
 # this allows you to overwrite only specified parameters
 
 # name of the run determines folder name in logs
-name: "linear_regression_v1"
+name: "linear_regression_deep"
 
 seed: 42
 
@@ -25,9 +25,9 @@ trainer:
 
 model:
   lr: 0.009848550767829235
-  weight_decay: 1.0892661204902117e-05
-  dropout: 0
-  include_deep_layers: False
+  weight_decay: 0.0001
+  dropout: 0.3
+  include_deep_layers: True
   #   For windows (2, 1, 0)
 
 datamodule:

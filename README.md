@@ -59,9 +59,9 @@ All the experiment are elaborated in our project's booklet, and may be reproduce
 - `experiment_rnn.yaml`: LSTM based time-series model, procceses neuronal activity *only* in an LSTM, to predict the vascular activity.
 
 **Main Datasets List**
-- `2021_02_01_18_45_51_neurovascular_full_dataset:` recording 19.3 minutes long (~35K timestamps).
-- `2021_02_01_18_45_51_neurovascular_partial_dataset:` the first 30 seconds of `2021_02_01_18_45_51_neurovascular_full_dataset` (~3K timestamps).
-- `2021_02_01_19_19_39_neurovascular_full_dataset:` recording 26.6 minutes long (~48K timestamps).
+- `2021_02_01_18_45_51_neurovascular_full_dataset`: recording 19.3 minutes long (~35K timestamps).
+- `2021_02_01_18_45_51_neurovascular_partial_dataset`: the first 30 seconds of `2021_02_01_18_45_51_neurovascular_full_dataset` (~3K timestamps).
+- `2021_02_01_19_19_39_neurovascular_full_dataset`: recording 26.6 minutes long (~48K timestamps).
 
 
 ### Override configurations

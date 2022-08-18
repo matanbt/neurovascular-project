@@ -81,7 +81,7 @@ python -m src.baseline.baseline
 ## Dirs and Files (with most logic)
 - `./data`: all datasets used for our models.
 - `./notebooks`: all notebooks used for exploring the data and POCing models.
-- `./cofings`: configuration yaml files, used to run the project.
+- `./configs`: configuration yaml files, used to run the project.
 - `./src`: source code used for the project (from data extraction, feature engineering, models logic to training and testing).
   - `datamodules/`: package for feature engineering and data preprocessing.
     - `neurovascu_datamodule.py`: lightning's datamodule that wraps our datasets.
@@ -90,5 +90,5 @@ python -m src.baseline.baseline
   - `baseline/`: package that contain our first and simplest model
     - `baseline.py`: contains the classic linear-regression model.
     - `models.py`: contains some additional models, including naive one for control. 
-  - `./src/models`: package that contain all our Deep Learning models.
-  - `./src/utils/handmade_metrics.py`: implementation of the special metrics we applied on the models during training / testing.
+  - `models`: package that contain all our Deep Learning models.
+  - `utils/handmade_metrics.py`: implementation of the special metrics we applied on the models during training / testing.

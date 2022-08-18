@@ -7,13 +7,12 @@
 <a href="https://pytorchlightning.ai/"><img alt="Lightning" src="https://img.shields.io/badge/-Lightning-792ee5?logo=pytorchlightning&logoColor=white"></a>
 <a href="https://hydra.cc/"><img alt="Config: Hydra" src="https://img.shields.io/badge/Config-Hydra-89b8cd"></a>
 <a href="https://github.com/ashleve/lightning-hydra-template"><img alt="Template" src="https://img.shields.io/badge/-Lightning--Hydra--Template-017F2F?style=flat&logo=github&labelColor=gray"></a><br>
-[![Paper](http://img.shields.io/badge/paper-arxiv.1001.2234-B31B1B.svg)](https://www.nature.com/articles/nature14539)
-
-[//]: # ([![Conference]&#40;http://img.shields.io/badge/AnyConference-year-4b44ce.svg&#41;]&#40;https://papers.nips.cc/paper/2020&#41;)
 </div>
 
 ## Description
 Exploring the neuro-vascular interface, with the goal of finding the HRF function that connects the two.
+
+[Paper Link](docs/neurovascu-ml-paper.pdf)
 
 ## How to run
 
@@ -50,13 +49,19 @@ python train.py experiment=experiment_name
 ```
 
 **Main Experiments List:**
+All the experiment are elaborated in our project's booklet, and may be reproduced using the following configs:
+- `experiment_mean_baseline.yaml`, `experiment_persistence_model.yaml`: Control models, used to serve as primitive comparable baselines. 
 - `experiment_lin_regr_vascu.yaml`: Naive Linear Regression baseline, but including the vascular activity.
 - `experiment_lin_regr.yaml`: Linear Regression baseline, from neuronal activity only.
+- `experiment_lin_net.yaml`: Deep Linear Network model, from neuronal activity only.
 - `experiment_ehrf.yaml`: A carefully engineered learnable function from neuronal activity.
-- TODO add here all important experiments.
+- `experiment_dual_rnn.yaml`: LSTM based time-series model, processes both vascular and neuronal activity (each in another LSTM), to predict the vascular activity.
+- `experiment_rnn.yaml`: LSTM based time-series model, procceses neuronal activity *only* in an LSTM, to predict the vascular activity.
 
 **Main Datasets List**
-- TODO add here all important datasets
+- `2021_02_01_18_45_51_neurovascular_full_dataset:` recording 19.3 minutes long (~35K timestamps).
+- `2021_02_01_18_45_51_neurovascular_partial_dataset:` the first 30 seconds of `2021_02_01_18_45_51_neurovascular_full_dataset` (~3K timestamps).
+- `2021_02_01_19_19_39_neurovascular_full_dataset:` recording 26.6 minutes long (~48K timestamps).
 
 
 ### Override configurations
@@ -65,20 +70,25 @@ You can override any parameter from command line like this. Some useful examples
 - `logger=csv`: change the logger to be a simple _CSV_ file.
 - `trainer.max_epochs=20`: Change the max epochs amount to 20.
 
-### Run the baseline model (non-Deep model)
+### Run the baseline model (Sklearn based, non-deep model)
 ```bash
 python -m src.baseline.baseline
 ```
 
+### Utils
+- **Visualize dataset:** You can visualize a dataset (of similar form to the given datasets) by utilizing `scripts/visualize_data.py`
+
 ## Dirs and Files (with most logic)
 - `./data`: all datasets used for our models.
 - `./notebooks`: all notebooks used for exploring the data and POCing models.
-- `./src/datamodules`: package for feature engineering and data preprocessing.
-  - `mnist_datamodule.py`: lightning's datamodule for our dataset.
-  - `components/nv_fetcher.py`: module for fetching raw data from neuro-vascular dataset.
-  - `components/nv_datasets.py`: module for various datasets of neuro-vascular, created using feature-engineering.
-- `./src/baseline`: package that contain our first and simplest model
-  - `baseline.py`: contains the classic linear-regression model.
-  - `models.py`: contains some additional models, including naive one for control. 
-- `./src/models`: package that contain all our Deep Learning models.
-  - `linear_regression_module.py`: reproducing the results from regression in `baseline.py` just in NN.
+- `./cofings`: configuration yaml files, used to run the project.
+- `./src`: source code used for the project (from data extraction, feature engineering, models logic to training and testing).
+  - `datamodules/`: package for feature engineering and data preprocessing.
+    - `neurovascu_datamodule.py`: lightning's datamodule that wraps our datasets.
+    - `components/nv_fetcher.py`: module for fetching raw data from neuro-vascular dataset.
+    - `components/nv_datasets.py`: module for various datasets of neuro-vascular, created using feature-engineering.
+  - `baseline/`: package that contain our first and simplest model
+    - `baseline.py`: contains the classic linear-regression model.
+    - `models.py`: contains some additional models, including naive one for control. 
+  - `./src/models`: package that contain all our Deep Learning models.
+  - `./src/utils/handmade_metrics.py`: implementation of the special metrics we applied on the models during training / testing.

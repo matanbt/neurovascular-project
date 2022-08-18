@@ -25,7 +25,7 @@ pin_memory: False
 dataset_object:
   _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
   data_dir: ${data_dir}  # data_dir is specified in config.yaml
-  dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
+  dataset_name: 2021_02_01_18_45_51_neurovascular_full_dataset
   window_len_neuro_back: 5
   window_len_neuro_forward: 2
   scaling_method: "neuro_normalize"

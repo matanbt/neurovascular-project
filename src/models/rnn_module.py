@@ -159,14 +159,16 @@ class RNNHRFModule(LightningModule):
             f'Expected RNN model to be from {possible_rnn_models} but got {rnn_model_type}'
         return rnn_models[rnn_model_type]
 
-    def forward(self, x_neuro: torch.Tensor, x_vascu: torch.Tensor):
+    def forward(self, x_neuro: torch.Tensor, x_vascu: torch.Tensor = None):
         if isinstance(x_neuro, list):
             # Lightning's prediction API calls `forward` with an (X,y) pair, so we extract the X
-            x_neuro = x_neuro[0]
-            x_vascu = x_vascu[0]
+            batch = x_neuro
+            x_neuro = batch[0]
+            x_vascu = batch[1]
 
-        x_vascu = x_vascu.double()
-        x_vascu = torch.transpose(x_vascu, -2, -1)  # the recurrence is on each timestamp
+        if x_vascu is not None:
+            x_vascu = x_vascu.double()
+            x_vascu = torch.transpose(x_vascu, -2, -1)  # the recurrence is on each timestamp
         x_neuro = x_neuro.double()
         x_neuro = torch.transpose(x_neuro, -2, -1)  # the recurrence is on each timestamp
 

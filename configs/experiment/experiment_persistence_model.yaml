@@ -45,6 +45,7 @@ model:
   # Flags:
   persistence_control_model_mode: True  # turns the module to Persistence Model (control experiment)
   generate_pred_csv: False
+  predictor_ckpt_path: null
 
 datamodule:
   batch_size: 128

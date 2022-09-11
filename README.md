@@ -12,7 +12,11 @@
 ## Description
 Exploring the neuro-vascular interface, with the goal of finding the HRF function that connects the two.
 
+This repo contains the data preprocessing logic and the models we created to estimate the HRF. It also includes infra to run experiments in scale.
+
 [Paper Link](docs/neurovascu-ml-paper.pdf)
+
+[Experiments](https://wandb.ai/neurovascular-ml/neurovascular-ml-server-experiments)
 
 ## How to run
 
@@ -41,7 +45,7 @@ wandb login
 export COMET_API_TOKEN={YOUR-API-KEY-FROM-COMET.ML}
 ```
 
-### Train model
+### Train model (i.e. Reproduction of Experiments)
 Train a model, with chosen experiment (= model variation) configuration from [configs/experiment/](configs/experiment/).
 
 ```bash
@@ -63,7 +67,14 @@ All the experiment are elaborated in our project's booklet, and may be reproduce
 - `2021_02_01_18_45_51_neurovascular_partial_dataset`: the first 30 seconds of `2021_02_01_18_45_51_neurovascular_full_dataset` (~3K timestamps).
 - `2021_02_01_19_19_39_neurovascular_full_dataset`: recording 26.6 minutes long (~48K timestamps).
 
-
+### Utilize existing model as a predictor
+Use a trained model to fully predict certain dataset, and save it to CSVs.
+1. 
+```bash
+python train.py experiment=experiment_name train=False test=False model.generate_pred_csv=True model.predictor_ckpt_path={PATH_TO_CKPT_ARTIFACT}
+```
+where `PATH_TO_CKPT_ARTIFACT` is the path the `*.ckpt` file of the model.
+2. You may use the notebook `notebooks/explore-results.ipynp` to analyze and visualize the results.
 ### Override configurations
 You can override any parameter from command line like this. Some useful examples:
 - `trainer.gpus=1`: train with single GPU (`0` for CPU).

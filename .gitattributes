@@ -3,4 +3,7 @@ notebooks/* linguist-vendored
 
 # ignore data
 data/* linguist-vendored
-data/2021_02_01_neurovascular_datasets/visualizations/* linguist-vendored
+data/2021_02_01_18_45_51_neurovascular_partial_dataset/visualizations/* linguist-vendored
+
+# ignore documents
+docs/*

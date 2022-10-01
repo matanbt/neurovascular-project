@@ -21,7 +21,7 @@ class LinearNetModule(LightningModule):
     ):
         super().__init__()
         self.vessels_count = vessels_count
-        
+
         # this line allows accessing init params with 'self.hparams' attribute
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
@@ -85,6 +85,27 @@ class LinearNetModule(LightningModule):
     Read the docs:
         https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html
     """
+
+    def get_e2e_transform(self):
+        """
+        Calculates the linear transformation induced by the linear net.
+        Returns: coefficients matrix and bias vector
+        """
+        in_training = self.training
+        if in_training:
+            self.eval()
+        x_size = self.hparams["x_size"]
+        y_size = self.hparams["y_size"]
+        e2e_mat = torch.zeros((x_size, y_size))
+        e2e_bias = self.net[-1].bias
+        for x_ind in range(x_size):
+            # we isolate the effect of neuron number x_ind on all blood vessels
+            one_hot = torch.nn.functional.one_hot(torch.tensor(x_ind), num_classes=x_size).type(torch.double)
+            output = self.forward(one_hot)
+            e2e_mat[x_ind] = output - e2e_bias
+        if in_training:
+            self.train()
+        return e2e_mat.detach().numpy(), e2e_bias.detach().numpy()
 
     def forward(self, x: torch.Tensor):
         for layer in self.net:

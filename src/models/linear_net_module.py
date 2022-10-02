@@ -92,20 +92,24 @@ class LinearNetModule(LightningModule):
         Returns: coefficients matrix and bias vector
         """
         in_training = self.training
-        if in_training:
-            self.eval()
+        self.eval()
         x_size = self.hparams["x_size"]
-        y_size = self.hparams["y_size"]
-        e2e_mat = torch.zeros((x_size, y_size))
-        e2e_bias = self.net[-1].bias
-        for x_ind in range(x_size):
-            # we isolate the effect of neuron number x_ind on all blood vessels
-            one_hot = torch.nn.functional.one_hot(torch.tensor(x_ind), num_classes=x_size).type(torch.double)
-            output = self.forward(one_hot)
-            e2e_mat[x_ind] = output - e2e_bias
+
+        # the function's bias is equal to the output on the 0 input
+        zero_in = torch.zeros(x_size, dtype=torch.float64)
+        e2e_bias = self.forward(zero_in)
+
+        # the function's matrix is equal to a product of all weight matrices
+        e2e_mat = self.net[0].weight.T
+        for i in range(1, len(self.net), 1):
+            layer = self.net[i]
+            if isinstance(layer, Linear):
+                e2e_mat = e2e_mat @ layer.weight.T
+
         if in_training:
             self.train()
-        return e2e_mat.detach().numpy(), e2e_bias.detach().numpy()
+            
+        return e2e_mat.detach(), e2e_bias.detach()
 
     def forward(self, x: torch.Tensor):
         for layer in self.net:

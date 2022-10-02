@@ -28,13 +28,15 @@ model:
   lr: 0.0001
   weight_decay: 0.00003
 
-  # Feature Extractor
+  # Feature Extractor(s)
   rnn_model_type: 'LSTM'  # From ['GRU', 'LSTM']
-  rnn_dropout: 0.3
+  rnn_dropout: 0.25
   rnn_hidden_dim: 500
   rnn_layers_count: 1
   rnn_bidirectional: False
 
+  # Whether to include vascular activity in the arch
+  with_vascular_activity: False
 
   # Regressor
   regressor_hidden_layers_list: [] #[500,]
@@ -42,12 +44,14 @@ model:
 
   # Flags:
   generate_pred_csv: False
+  predictor_ckpt_path: null
 
 datamodule:
-  batch_size: 32
+  batch_size: 128
   dataset_object:
-    _target_: src.datamodules.components.nv_datasets.NVDataset_EHRF
+    _target_: src.datamodules.components.nv_datasets.NVDataset_RNN
     data_dir: ${data_dir}  # data_dir is specified in config.yaml
     dataset_name: 2021_02_01_18_45_51_neurovascular_partial_dataset
     window_len_neuro_back: 10
     window_len_neuro_forward: 5
+    window_len_vascu_back: 0

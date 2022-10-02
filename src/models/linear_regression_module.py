@@ -1,7 +1,7 @@
 from typing import Any, List
 
 import torch
-from torch.nn import Sequential, Linear, Dropout, MSELoss
+from torch.nn import Sequential, Linear, Dropout, MSELoss, ReLU
 from pytorch_lightning import LightningModule
 from torchmetrics import MinMetric, MeanSquaredError, MeanAbsoluteError
 from src.utils.handmade_metrics import MeanBestKMSE, NormalizedRootMeanSquaredError
@@ -15,6 +15,7 @@ class LinearRegressionModule(LightningModule):
         lr: float = 0.001,
         weight_decay: float = 0.0005,
         dropout: float = 0.0,
+        include_deep_layers: bool = False,
         **kwargs
     ):
         super().__init__()
@@ -23,10 +24,14 @@ class LinearRegressionModule(LightningModule):
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
 
-        # self.net = torch.nn.Linear(x_size, y_size)
+        deep_layers = []
+        if include_deep_layers:
+            deep_layers = [Dropout(p=dropout), ReLU(),
+                           Linear(y_size, y_size), Dropout(p=dropout), ReLU(),
+                           Linear(y_size, y_size)]
         self.net = Sequential(
             Linear(x_size, y_size),
-            Dropout(p=dropout)
+            *deep_layers
         )
         self.net.double()  # our data is passed in float64 (i.e. double)
 

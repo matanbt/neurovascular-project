@@ -171,7 +171,7 @@ def plot_dist_vascu(
     df_vascu = fetcher.get_vessels_df()
 
     fig = ff.create_distplot(df_vascu.values.T, df_vascu.columns,
-                             show_hist=False, bin_size=.2)
+                             show_hist=False, bin_size=.9)
     fig.update_layout(
         title="Vascular Activity - Values Distribution (of each vessel separately)",
         legend_title_text="Vessels List",
@@ -180,8 +180,9 @@ def plot_dist_vascu(
     )
 
     # Epilogue:
+    fig.show()
     if visualization_path:
-        fig.write_html(os.path.join(visualization_path, "vascu_dist_vis.html"))
+        # fig.write_html(os.path.join(visualization_path, "vascu_dist_vis.html"))
         fig.write_image(os.path.join(visualization_path, "vascu_dist_vis.png"))
     if show_fig:
         fig.show()
@@ -198,16 +199,16 @@ def calc_correlation():
 if __name__ == '__main__':
     data_dir = "./data"
     # modify the following dataset_name to visualize another dataset
-    dataset_name = "2021_02_01_19_19_39_neurovascular_full_dataset"
+    dataset_name = "2021_02_01_18_45_51_neurovascular_full_dataset"
     # path to save visualization artifacts:
     visualization_path = os.path.join(data_dir, dataset_name, "visualizations")
 
     fetcher = NVDatasetFetcher(dataset_name=dataset_name)
 
     # Save plots (HTMLs) to path:
-    plot_neurons(fetcher, visualization_path=visualization_path)
-    plot_vessels(fetcher, visualization_path=visualization_path)
-    plot_coords(fetcher, visualization_path=visualization_path)
-    plot_correlation_of_mean_activity(fetcher)
-    plot_dist_neuro(fetcher, visualization_path=visualization_path)
+    # plot_neurons(fetcher, visualization_path=visualization_path)
+    # plot_vessels(fetcher, visualization_path=visualization_path)
+    # plot_coords(fetcher, visualization_path=visualization_path)
+    # plot_correlation_of_mean_activity(fetcher, visualization_path=visualization_path)
+    # plot_dist_neuro(fetcher, visualization_path=visualization_path)
     plot_dist_vascu(fetcher, visualization_path=visualization_path)

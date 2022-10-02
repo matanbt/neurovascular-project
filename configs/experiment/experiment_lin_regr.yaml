@@ -27,6 +27,7 @@ model:
   lr: 0.009848550767829235
   weight_decay: 1.0892661204902117e-05
   dropout: 0
+  include_deep_layers: False
   #   For windows (2, 1, 0)
 
 datamodule:
@@ -38,6 +39,7 @@ datamodule:
     window_len_neuro_back: 5
     window_len_neuro_forward: 3
     window_len_vascu_back: 0
+    vascu_delay: 2
     window_len_y: 1
     poly_degree:
     aggregate_window: "flatten"

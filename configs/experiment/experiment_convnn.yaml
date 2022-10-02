@@ -40,6 +40,7 @@ model:
 
   # Flags:
   generate_pred_csv: False
+  predictor_ckpt_path: null
 
 datamodule:
   batch_size: 32

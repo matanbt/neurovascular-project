@@ -121,6 +121,7 @@ class NVDataset_Classic(NVDataset_Base):
                  window_len_neuro_back: int = 5,
                  window_len_neuro_forward: int = 5,
                  window_len_vascu_back: int = 5,
+                 vascu_delay: int = 0,
                  window_len_y: int = 1,
                  scaling_method: str = None,
                  aggregate_window="flatten",
@@ -147,8 +148,10 @@ class NVDataset_Classic(NVDataset_Base):
         self.window_len_neuro_back = window_len_neuro_back
         self.window_len_neuro_forward = window_len_neuro_forward
         self.window_len_vascu_back = window_len_vascu_back
+        self.vascu_delay = vascu_delay
         self.window_len_y = window_len_y
-        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward, window_len_vascu_back, window_len_y)
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward,
+                                  window_len_vascu_back + self.vascu_delay, window_len_y)
 
         # Polynomial featuring
         self.poly_degree = poly_degree
@@ -199,8 +202,8 @@ class NVDataset_Classic(NVDataset_Base):
         x[:self.neuro_window_size] = self.neuro_activity_array[:, neuro_wind_start: neuro_wind_end].flatten()
 
         if self.vascu_window_size > 0:
-            vascu_wind_start = idx - self.window_len_vascu_back
-            vascu_wind_end = idx
+            vascu_wind_start = idx - self.window_len_vascu_back - self.vascu_delay
+            vascu_wind_end = idx - self.vascu_delay
             x[self.neuro_window_size:] = self.vascu_activity_array[:, vascu_wind_start: vascu_wind_end].flatten()
 
         if self.poly_transform is not None:
@@ -351,6 +354,114 @@ class NVDataset_EHRF(NVDataset_Base):
             'distances': self._get_distances(),
             'mean_vascular_activity': self._get_mean_vascular_activity()
         }
+
+class NVDataset_RNN(NVDataset_Base):
+    """
+        Feature-engineering for the EHRF with distances as extra data, defines:
+        X - neuronal activity window, with shape preserved (each row is a different neuron)
+        y - blood activity of a time-stamp (of shape `vessels count`)
+    """
+
+    def __init__(self,
+                 # Dataset source:
+                 data_dir: str = "data/",
+                 dataset_name: str = "2021_02_01_18_45_51_neurovascular_partial_dataset",
+
+                 # Dataset hyper parameters:
+                 window_len_vascu_back: int = 50,
+                 vascu_delay: int = 0,  # makes the window: {t-w-delay, ... t-delay}
+                 window_len_neuro_back: int = 5,
+                 window_len_neuro_forward: int = 2,
+                 scaling_method: str = None,  # maybe scaling with Sigmoid will help?
+                 destroy_data: bool = False
+                 ):
+        """
+        Args:
+            data_dir: path for the dir we keep the data.
+            dataset_name: name of the raw dataset we build this instance upon.
+            window_len_neuro_back: length of the neuronal window of the 'past' ( must be positive).
+            window_len_neuro_forward: length of the neuronal window of the 'future' (`0` means no neuro-forward-window).
+            scaling_method: How to scale the data (usually just the neurons), None means no scaling
+            destroy_data: shuffles the data to make it "bad" (for control experiments)
+        """
+        super().__init__(data_dir=data_dir, dataset_name=dataset_name,
+                         destroy_data=destroy_data, scaling_method=scaling_method)
+
+        # back and forward window size
+        self.window_len_vascu_back = window_len_vascu_back
+        self.window_len_neuro_back = window_len_neuro_back
+        self.window_len_neuro_forward = window_len_neuro_forward
+        self.vascu_delay = vascu_delay
+        self.max_window_len = max(window_len_neuro_back, window_len_neuro_forward,
+                                  window_len_vascu_back + self.vascu_delay)
+
+        # Validate dataset parameters
+        self.validate_params()
+
+        # Calculate X,y sizes:
+        self.single_neuro_window_size = self.window_len_neuro_back + self.window_len_neuro_forward
+        self.neuro_window_size = self.single_neuro_window_size * self.fetcher.metadata["neurons_count"]
+
+        # x_size is actually the neuron-window length
+        self.x_size = {
+            'x_neuro_size': (self.fetcher.metadata["neurons_count"], self.single_neuro_window_size),
+            'x_vascu_size': (self.fetcher.metadata["blood_vessels_count"], self.window_len_vascu_back)
+        }
+
+        # calculate size of y
+        self.y_size = self.fetcher.metadata["blood_vessels_count"]
+
+        # the effective time vector, truncating the window edges
+        self.time_vector = self.fetcher.time_vector_array[self.max_window_len: -self.max_window_len]
+        self.idx_vector = np.arange(len(self.fetcher.time_vector_array))[self.max_window_len: -self.max_window_len]
+        self.true_vector = self.vascu_activity_array.T[self.max_window_len: -self.max_window_len]
+
+        self.distances = None
+        self._get_distances()
+
+    def __len__(self):
+        return self.fetcher.metadata['timeseries_len'] - self.max_window_len * 2
+
+    def __getitem__(self, idx):
+        """
+        Defines the X and y of each timestamp (=idx)
+        """
+        assert 0 <= idx < len(self), f"Expected index in [0, {len(self) - 1}] but got {idx}"
+
+        idx += self.max_window_len  # adds window offset to get the actual time-stamp
+
+        # Build X (neuronal activity entry):
+        vascu_wind_start = idx - self.window_len_vascu_back
+        neuro_wind_start = idx - self.window_len_neuro_back
+        neuro_wind_end = idx + self.window_len_neuro_forward
+        x_neuro = self.neuro_activity_array[:, neuro_wind_start: neuro_wind_end]
+        x_vascu = self.vascu_activity_array[:, vascu_wind_start - self.vascu_delay: idx - self.vascu_delay]
+
+        # Build Y:
+        y = self.vascu_activity_array[:, idx]
+
+        return x_neuro, x_vascu, y
+
+    def validate_params(self):
+        """
+            Some basic invariants we want to hold, after the dataset parameters initialization
+        """
+        assert self.window_len_neuro_back > 0, \
+            "Expected positive back-window length for neuronal activity"
+        assert self.scaling_method in [None, "neuro_mean_removal", "neuro_normalize"]
+
+    def get_data_hparams(self):
+        """ returns the hyper parameters that defines this dataset instance """
+        return {
+            'dataset_name': self.dataset_name,
+            'window_len_vascu_back': self.window_len_vascu_back,
+            'window_len_neuro_back': self.window_len_neuro_back,
+            'window_len_neuro_forward': self.window_len_neuro_forward,
+        }
+
+    def get_extras(self):
+        """ Defines data to pass to the model BEFORE training """
+        return {}
 
 
 class NVDataset_Tabular(NVDataset_Base):

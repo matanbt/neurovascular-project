@@ -2,7 +2,7 @@ import itertools
 from typing import List
 
 import numpy as np
-from src.datamodules.components.nv_datasets import NVDataset_Classic
+from src.datamodules.components.nv_datasets import NVDataset_Base, NVDataset_Classic, NVDataset_Tabular
 
 from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -99,46 +99,42 @@ class NVMultiLinearRegressionModel:
 from xgboost import XGBRegressor, cv, DMatrix
 class NVXGBLinearRegressionModel:
     def __init__(self,
-                 dataset: NVDataset_Classic,
-                 test_size):
+                 dataset: NVDataset_Tabular,
+                 train_size,
+                 test_size,
+                 lr=0.01,
+                 max_depth=6,
+                 n_estimators=1000):
         """ classic linear regression model """
         self.y_pred = None
         self.y_pred_test = None
         self.y_pred_train = None
         self.model = None
+        self.lr = lr
+        self.max_depth = max_depth
+        self.n_estimators = n_estimators
 
-        x, y = dataset.to_numpy()
+        x = dataset.fetcher.get_neurons_df()
+        y = dataset.fetcher.get_vessels_df()
         self.x, self.y = x, y
 
         # split the dataset
-        self.x_train, self.x_test = x[:-test_size], x[-test_size:]
-        self.y_train, self.y_test = y[:-test_size], y[-test_size:]
+        self.x_train, self.x_test = x[:train_size], x[-test_size:]
+        self.y_train, self.y_test = y[:train_size], y[-test_size:]
 
         self.test_size = test_size
 
     def fit(self):
         """ train the model on the training set, then predict """
-        # dmatrix = DMatrix(data=self.x_train, label=self.y_train)
-        # params = {'objective': 'reg:squarederror',
-        #           'max_depth': 6,
-        #           'colsample_bylevel': 0.5,
-        #           'learning_rate': 0.01,
-        #           'random_state': 20}
-        # cv_results = cv(dtrain=(self.x_train, self.y_train),
-        #                 params=params,
-        #                 nfold=10,
-        #                 metrics={'rmse'}, as_pandas=True, seed=20, num_boost_round=1000)
         from sklearn.multioutput import MultiOutputRegressor
-        self.model = XGBRegressor(
-            objective='reg:squarederror',
-            max_depth=6,
-            learning_rate=0.01,
-            tree_method="hist",
-            n_estimators=1000,
-            eval_metric=mean_absolute_error,
-        )
-        self.model.fit(self.x_train, self.y_train,
-                       eval_set=[(self.x_train, self.y_train)])
+        self.model = MultiOutputRegressor(XGBRegressor(objective='reg:squarederror',
+                                                       max_depth=self.max_depth,
+                                                       learning_rate=self.lr,
+                                                       tree_method="hist",
+                                                       n_estimators=self.n_estimators,
+                                                       eval_metric=mean_absolute_error,))
+
+        self.model.fit(self.x_train, self.y_train)
 
         self.y_pred = self.model.predict(self.x)
         self.y_pred_train = self.model.predict(self.x_train)
@@ -148,7 +144,10 @@ class NVXGBLinearRegressionModel:
 
     def get_model_hparams(self):
         return {
-            'test_size': self.test_size
+            'test_size': self.test_size,
+            'lr': self.lr,
+            'max_depth': self.max_depth,
+            'n_estimators': self.n_estimators
         }
 
     def evaluate(self):

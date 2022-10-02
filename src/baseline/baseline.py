@@ -9,7 +9,7 @@ import pandas as pd
 
 from src.baseline.more_models import NVXGBLinearRegressionModel, PersistModel, MeanModel
 from src.baseline.results_summarizer import ResultsSummarizer
-from src.datamodules.components.nv_datasets import NVDataset_Classic
+from src.datamodules.components.nv_datasets import NVDataset_Classic, NVDataset_Tabular
 
 from sklearn.linear_model import RidgeCV
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -145,22 +145,27 @@ def tune_dataset_parameters(save_to_csv=True) -> pd.DataFrame:
 def main():
     """ runs the regular pipeline of the model """
     # create the dataset with its hparams
-    dataset = NVDataset_Classic(
+    # dataset = NVDataset_Classic(
+    #     window_len_neuro_back=2,
+    #     window_len_neuro_forward=1,
+    #     window_len_vascu_back=0,
+    #     window_len_y=1,
+    #     scale_method=None,
+    #     poly_degree=None,
+    #     destroy_data=False  # control-group (shuffles the time-series)
+    # )
+    dataset = NVDataset_Tabular(
         window_len_neuro_back=2,
         window_len_neuro_forward=1,
-        window_len_vascu_back=0,
-        window_len_y=1,
-        scale_method=None,
-        poly_degree=None,
         destroy_data=False  # control-group (shuffles the time-series)
     )
 
     # run and evaluate the model
-    regr_model = NVLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # simple baseline
+    # regr_model = NVLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # simple baseline
 
     # More model (comment out to run these instead)
-    # regr_model = NVXGBLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # XGB-Regressor
-    #regr_model = PersistModel(dataset=dataset, test_size=TEST_SIZE)  # control group (naive predictor)
+    regr_model = NVXGBLinearRegressionModel(dataset=dataset, test_size=TEST_SIZE)  # XGB-Regressor
+    # regr_model = PersistModel(dataset=dataset, test_size=TEST_SIZE)  # control group (naive predictor)
     # regr_model = MeanModel(dataset=dataset, test_size=TEST_SIZE, mean_on_training_only=True)  # control group (naive predictor)
 
     regr_model.fit()
@@ -175,5 +180,3 @@ def main():
 if __name__ == '__main__':
     main()
     # df = tune_dataset_parameters()
-
-

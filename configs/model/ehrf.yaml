@@ -18,6 +18,7 @@ with_vascular_mean: False
 
 # Flags:
 generate_pred_csv: False
+predictor_ckpt_path: null
 
 # These are (currently) added dynamically, based on the dataset metadata:
 # x_size: -

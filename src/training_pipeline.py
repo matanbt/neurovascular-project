@@ -119,12 +119,14 @@ def train(config: DictConfig) -> Optional[float]:
         # Saves predictions to CSV for post-analysis' sake
         log.info('Writing all prediction to csv files...')
         import numpy as np
+        ckpt_path = config.model.get("predictor_ckpt_path")
         preds = trainer.predict(model=model, datamodule=datamodule, ckpt_path=ckpt_path)
         preds = torch.vstack(preds).numpy()
         np.savetxt('generated_preds.csv', preds)
         np.savetxt('generated_idx.csv',
                    np.vstack([datamodule.dataset.idx_vector, datamodule.dataset.time_vector]))
         np.savetxt('generated_true.csv', datamodule.dataset.true_vector)
+        log.info(f"Saved predictions to {os.getcwd()}")
 
     # Make sure everything closed properly
     log.info("Finalizing!")

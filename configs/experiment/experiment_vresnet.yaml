@@ -28,7 +28,7 @@ model:
   lr: 0.0002
   weight_decay: 0.0005
 
-  # Flags:
+  # Arch Flags:
   with_res_connections: True
   with_vascular_mean: False  # whether to insert the vascular mean to the residuals sum
   with_batchnorm: True
@@ -36,13 +36,14 @@ model:
 
   # Model's Hyper-parameters:
   start_hidden_layers_count: 0  # count of the first hidden layers
-  end_hidden_layers_count: 0  # count of the last hidden layers
-  res_block_layers_count: 5
-  res_blocks_count: 3  # how many res-blocks?
+  end_hidden_layers_count: -1  # count of the last hidden layers  (-1 for not end layer)
+  res_block_layers_count: 5  # how many hidden FFNNs in the block
+  res_blocks_count: 2  # how many res-blocks?
 
 
   # Flags:
   generate_pred_csv: False
+  predictor_ckpt_path: null
 
 datamodule:
   batch_size: 128

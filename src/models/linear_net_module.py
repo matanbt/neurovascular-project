@@ -21,7 +21,7 @@ class LinearNetModule(LightningModule):
     ):
         super().__init__()
         self.vessels_count = vessels_count
-        
+
         # this line allows accessing init params with 'self.hparams' attribute
         # it also ensures init params will be stored in ckpt
         self.save_hyperparameters(logger=False)
@@ -85,6 +85,31 @@ class LinearNetModule(LightningModule):
     Read the docs:
         https://pytorch-lightning.readthedocs.io/en/latest/common/lightning_module.html
     """
+
+    def get_e2e_transform(self):
+        """
+        Calculates the linear transformation induced by the linear net.
+        Returns: coefficients matrix and bias vector
+        """
+        in_training = self.training
+        self.eval()
+        x_size = self.hparams["x_size"]
+
+        # the function's bias is equal to the output on the 0 input
+        zero_in = torch.zeros(x_size, dtype=torch.float64)
+        e2e_bias = self.forward(zero_in)
+
+        # the function's matrix is equal to a product of all weight matrices
+        e2e_mat = self.net[0].weight.T
+        for i in range(1, len(self.net), 1):
+            layer = self.net[i]
+            if isinstance(layer, Linear):
+                e2e_mat = e2e_mat @ layer.weight.T
+
+        if in_training:
+            self.train()
+            
+        return e2e_mat.detach(), e2e_bias.detach()
 
     def forward(self, x: torch.Tensor):
         for layer in self.net:
